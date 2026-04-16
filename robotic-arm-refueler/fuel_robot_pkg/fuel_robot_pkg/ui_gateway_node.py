@@ -71,17 +71,17 @@ class UiGatewayNode(Node):
                     self._respond(400, {'error': 'robot_x, robot_y, robot_z required'})
                     return
 
+                start_msg = Bool()
+                start_msg.data = True
+                node.start_pub.publish(start_msg)
+                node.get_logger().info('published /fueling/start')
+
                 xyz_msg = Float64MultiArray()
                 xyz_msg.data = [float(x), float(y), float(z)]
                 node.xyz_pub.publish(xyz_msg)
                 node.get_logger().info(
                     f'published xyz: [{x:.1f}, {y:.1f}, {z:.1f}]'
                 )
-
-                start_msg = Bool()
-                start_msg.data = True
-                node.start_pub.publish(start_msg)
-                node.get_logger().info('published /fueling/start')
 
                 node.latest_done = None
                 self._respond(200, {'ok': True})
