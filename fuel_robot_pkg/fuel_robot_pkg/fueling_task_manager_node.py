@@ -25,6 +25,9 @@ class FuelingTaskManagerNode(Node):
         self.cmd_done_sub = self.create_subscription(
             String, '/fueling/cmd_done', self.cmd_done_callback, 10
         )
+        self.robot_cmd_sub = self.create_subscription(
+            String, '/fueling/robot_cmd', self.robot_cmd_callback, 10
+        )
 
         self.target_pose_pub = self.create_publisher(
             Float64MultiArray, '/fueling/fuel_port_pose', 10
@@ -124,6 +127,12 @@ class FuelingTaskManagerNode(Node):
 
         self.get_logger().info('published robot command: move_to_fuel_port')
         self.publish_status('robot_move_command_sent')
+
+    def robot_cmd_callback(self, msg: String):
+        if msg.data == 'estop':
+            self.get_logger().warn('E-STOP received, resetting FSM')
+            self.publish_done(False)
+            self.reset_state()
 
     def cmd_done_callback(self, msg: String):
         if not self.busy or not self.waiting_for_robot:

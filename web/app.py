@@ -311,6 +311,25 @@ def api_post_snapshot():
     return jsonify({"ok": True}), 201
 
 
+@app.route("/api/robot/go_home", methods=["POST"])
+@login_required
+def api_robot_go_home():
+    data = request.get_json(force=True)
+    station_id = data.get("station_id")
+    try:
+        http_requests.post(
+            f"{ROS2_GATEWAY_URL}/fueling/go_home",
+            json={"station_id": station_id},
+            timeout=2.0,
+        )
+        insert_log("INFO", "홈 위치 이동 요청",
+                   source="control", station_id=station_id)
+    except Exception as e:
+        insert_log("ERROR", f"ROS2 gateway 홈 이동 요청 실패: {e}",
+                   source="control", station_id=station_id)
+    return jsonify({"ok": True})
+
+
 # ════════════════════════════════════════
 #  비전 API
 # ════════════════════════════════════════
@@ -432,6 +451,18 @@ def api_task_estop():
                     finished_at=datetime.now(timezone.utc).isoformat())
         insert_log("ERROR", f"E-STOP 발동 (task_id={task['id']})",
                    source="control", station_id=station_id, task_id=task["id"])
+
+    # ROS2 gateway에 E-STOP 전파
+    try:
+        http_requests.post(
+            f"{ROS2_GATEWAY_URL}/fueling/estop",
+            json={"station_id": station_id},
+            timeout=1.0,
+        )
+    except Exception as e:
+        insert_log("ERROR", f"ROS2 gateway E-STOP 전파 실패: {e}",
+                   source="control", station_id=station_id)
+
     return jsonify({"ok": True, "stopped_task_id": task["id"] if task else None})
 
 

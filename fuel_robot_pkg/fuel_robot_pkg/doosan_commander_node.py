@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Float64MultiArray
-from dsr_msgs2.srv import MoveJoint, MoveLine, SetRobotMode, SetToolDigitalOutput
+from dsr_msgs2.srv import MoveJoint, MoveLine, MoveStop, MoveHome, SetRobotMode, SetToolDigitalOutput
 from functools import partial
 
 
@@ -29,6 +29,8 @@ class DoosanCommanderNode(Node):
         self.move_joint_cli = self.create_client(MoveJoint, 'motion/move_joint')
         self.move_line_cli = self.create_client(MoveLine, 'motion/move_line')
         self.tool_do_cli = self.create_client(SetToolDigitalOutput, 'io/set_tool_digital_output')
+        self.move_stop_cli = self.create_client(MoveStop, 'motion/move_stop')
+        self.move_home_cli = self.create_client(MoveHome, 'motion/move_home')
 
         self.wait_for_services()
         self.set_autonomous_mode()
@@ -51,6 +53,10 @@ class DoosanCommanderNode(Node):
             self.get_logger().info('waiting for motion/move_line...')
         while not self.tool_do_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('waiting for io/set_tool_digital_output...')
+        while not self.move_stop_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('waiting for motion/move_stop...')
+        while not self.move_home_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('waiting for motion/move_home...')
 
     def set_autonomous_mode(self):
         req = SetRobotMode.Request()
@@ -75,8 +81,11 @@ class DoosanCommanderNode(Node):
     def cmd_callback(self, msg: String):
         cmd = msg.data
 
-        if cmd == 'go_home':
-            self.call_move_joint(self.home_j, cmd)
+        if cmd == 'estop':
+            self.execute_estop()
+
+        elif cmd == 'go_home':
+            self.execute_go_home()
 
         elif cmd == 'move_to_fuel_port':
             if self.latest_fuel_port_pose is None:
@@ -88,6 +97,40 @@ class DoosanCommanderNode(Node):
 
         else:
             self.get_logger().warn(f'Unknown command: {cmd}')
+
+    def execute_estop(self):
+        """move_stop(DR_QSTOP_STO=0): 즉시 정지 (Category 1)"""
+        self.get_logger().warn('E-STOP: calling move_stop (quick stop)')
+        req = MoveStop.Request()
+        req.stop_mode = 0  # DR_QSTOP_STO: Quick stop Category 1
+        future = self.move_stop_cli.call_async(req)
+        future.add_done_callback(self._estop_done_callback)
+        self.publish_status('estop_executed')
+
+    def _estop_done_callback(self, future):
+        try:
+            response = future.result()
+            self.get_logger().warn(f'E-STOP move_stop result: success={response.success}')
+        except Exception as e:
+            self.get_logger().error(f'E-STOP move_stop failed: {e}')
+
+    def execute_go_home(self):
+        """서보 ON → move_home (mechanical home)"""
+        self.get_logger().info('Go home: enabling servo then move_home')
+        req = SetRobotMode.Request()
+        req.robot_mode = 1
+        future = self.set_mode_cli.call_async(req)
+        future.add_done_callback(self._servo_on_then_home)
+
+    def _servo_on_then_home(self, future):
+        try:
+            resp = future.result()
+            self.get_logger().info(f'Servo ON result: success={resp.success}')
+        except Exception as e:
+            self.get_logger().error(f'Servo ON failed: {e}')
+            return
+
+        self.call_move_joint(self.home_j, 'go_home')
 
     def call_move_joint(self, joints, done_cmd):
         req = MoveJoint.Request()

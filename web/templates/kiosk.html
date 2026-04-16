@@ -130,6 +130,13 @@ body { background: #e8eaed; }
   content: ''; position: absolute; inset: 0;
   background: repeating-linear-gradient(-45deg,transparent,transparent 8px,rgba(255,255,255,0.06) 8px,rgba(255,255,255,0.06) 16px);
 }
+.btn-home {
+  background: #1e40af; color: white; border: 2px solid #1e40af;
+  border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s; position: relative; overflow: hidden;
+}
+.btn-home:hover { background: #1d4ed8; border-color: #1d4ed8; }
 
 /* STEPS */
 .step-list { margin-bottom: 14px; }
@@ -227,7 +234,10 @@ body { background: #e8eaed; }
       </div>
 
       <button class="btn-start" id="kBtnStart" onclick="doStart()">주유 시작 →</button>
-      <button class="btn-estop" onclick="doEstop()">⬛ 비상 정지  E-STOP</button>
+      <div style="display:flex;gap:7px;">
+        <button class="btn-estop" style="flex:1;" onclick="doEstop()">⬛ E-STOP</button>
+        <button class="btn-home" style="flex:1;" onclick="doGoHome()">⬛ 홈 위치 이동</button>
+      </div>
     </div>
 
     <!-- RIGHT -->

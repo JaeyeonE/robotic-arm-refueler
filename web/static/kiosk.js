@@ -80,6 +80,20 @@ async function doEstop() {
     } catch (e) { /* silent */ }
 }
 
+// ── 홈 위치 이동 ──
+async function doGoHome() {
+    try {
+        await fetch('/api/robot/go_home', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ station_id: STATION_ID }),
+        });
+        const btn = document.querySelector('.btn-home');
+        btn.textContent = '⬛ 홈 위치 이동 중...';
+        setTimeout(() => { btn.textContent = '⬛ 홈 위치 이동'; }, 3000);
+    } catch (e) { /* silent */ }
+}
+
 // ── 시스템 상태 (3초) ──
 async function loadStatus() {
     try {
