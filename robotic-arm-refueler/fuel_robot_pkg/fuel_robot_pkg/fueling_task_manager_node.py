@@ -8,9 +8,9 @@ class FuelingTaskManagerNode(Node):
         super().__init__('fueling_task_manager_node')
 
         # 고정 자세값
-        self.declare_parameter('fixed_rx', 180.0)
-        self.declare_parameter('fixed_ry', 0.0)
-        self.declare_parameter('fixed_rz', 90.0)
+        self.declare_parameter('fixed_rx', 90.0)
+        self.declare_parameter('fixed_ry', -90.0)
+        self.declare_parameter('fixed_rz', -90.0)
 
         self.fixed_rx = self.get_parameter('fixed_rx').value
         self.fixed_ry = self.get_parameter('fixed_ry').value

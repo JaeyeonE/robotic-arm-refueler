@@ -37,3 +37,13 @@ rs_yolo_print_logs.py
 rs_yolo_test.py
 tf_advanced_test.py
 tf_test.py
+
+# Unuseful files...
+README.dataset.txt
+README.roboflow.txt
+README.md
+
+robotic-arm-refueler/build
+robotic-arm-refueler/install
+robotic-arm-refueler/log
+
