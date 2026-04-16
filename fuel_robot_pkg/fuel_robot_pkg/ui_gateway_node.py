@@ -9,13 +9,24 @@ from std_msgs.msg import Bool, Float64MultiArray, String
 
 # ROS2 status → 웹 step 매핑
 STATUS_TO_STEP = {
-    'start_received':           {'current_step': 1, 'step_progress': 0.0},
-    'target_pose_ready':        {'current_step': 2, 'step_progress': 0.3},
-    'robot_move_command_sent':  {'current_step': 2, 'step_progress': 0.7},
-    'move_completed':           {'current_step': 4, 'step_progress': 1.0},
-    'go_home_success':          {'current_step': 4, 'step_progress': 1.0},
+    'start_received':            {'current_step': 1, 'step_progress': 0.0},
+    'target_pose_ready':         {'current_step': 2, 'step_progress': 0.3},
+    'robot_move_command_sent':   {'current_step': 2, 'step_progress': 0.7},
+    'move_completed':            {'current_step': 4, 'step_progress': 1.0},
+    'go_home_success':           {'current_step': 4, 'step_progress': 1.0},
     'move_to_fuel_port_success': {'current_step': 3, 'step_progress': 0.0},
+    # 시퀀스 FSM 상태
+    'fueling_started':           {'current_step': 1, 'step_progress': 0.0},
+    'fueling_complete':          {'current_step': 4, 'step_progress': 1.0, 'status': 'success'},
+    'fueling_error':             {'current_step': 0, 'step_progress': 0.0, 'status': 'fail'},
 }
+
+# 시퀀스 41 액션 → 키오스크 4-step 매핑 경계
+# Phase 1 (캡 제거):    action 1~12  → step 1
+# Phase 2 (주유건 픽업): action 13~19 → step 2
+# Phase 3 (주유건 삽입): action 20~26 → step 3
+# Phase 4~6 (재거치+복귀): action 27~41 → step 4
+PHASE_BOUNDARIES = [12, 19, 26]  # step 1→2, 2→3, 3→4 경계
 
 
 class UiGatewayNode(Node):
@@ -189,13 +200,48 @@ class UiGatewayNode(Node):
         self.latest_status = msg.data
         self.get_logger().info(f'[UI STATUS] {msg.data}')
 
-        # step 매핑 → Flask PATCH
+        # fueling_progress:N/T 포맷 파싱
+        if msg.data.startswith('fueling_progress:'):
+            self._handle_fueling_progress(msg.data)
+            return
+
+        # 고정 step 매핑 → Flask PATCH
         step_info = STATUS_TO_STEP.get(msg.data)
         if step_info:
             self._patch_task(**step_info)
 
         # 모든 상태 변경을 로그로 전송
         self._post_log('INFO', f'[ROS2] {msg.data}')
+
+    def _handle_fueling_progress(self, status_str: str):
+        """fueling_progress:N/T → kiosk 4-step + step_progress 변환"""
+        try:
+            parts = status_str.split(':')[1]  # "N/T"
+            completed, total = map(int, parts.split('/'))
+        except (IndexError, ValueError):
+            return
+
+        # 전체 진행률 (0.0 ~ 1.0)
+        overall = completed / total if total > 0 else 0.0
+
+        # 41 액션 → 4-step 매핑
+        if completed <= PHASE_BOUNDARIES[0]:
+            current_step = 1
+        elif completed <= PHASE_BOUNDARIES[1]:
+            current_step = 2
+        elif completed <= PHASE_BOUNDARIES[2]:
+            current_step = 3
+        else:
+            current_step = 4
+
+        self._patch_task(
+            current_step=current_step,
+            step_progress=round(overall, 3),
+        )
+        # 진행 로그는 5 액션마다 전송 (로그 폭주 방지)
+        if completed % 5 == 0 or completed == total:
+            pct = int(overall * 100)
+            self._post_log('INFO', f'[주유 진행] {pct}% ({completed}/{total})')
 
     def done_callback(self, msg: Bool):
         self.latest_done = msg.data

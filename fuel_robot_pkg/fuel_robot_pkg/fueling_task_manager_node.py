@@ -122,10 +122,10 @@ class FuelingTaskManagerNode(Node):
             self.move_timer = None
 
         cmd_msg = String()
-        cmd_msg.data = 'move_to_fuel_port'
+        cmd_msg.data = 'execute_fueling'
         self.robot_cmd_pub.publish(cmd_msg)
 
-        self.get_logger().info('published robot command: move_to_fuel_port')
+        self.get_logger().info('published robot command: execute_fueling')
         self.publish_status('robot_move_command_sent')
 
     def robot_cmd_callback(self, msg: String):
@@ -138,10 +138,10 @@ class FuelingTaskManagerNode(Node):
         if not self.busy or not self.waiting_for_robot:
             return
 
-        if msg.data != 'move_to_fuel_port':
+        if msg.data not in ('move_to_fuel_port', 'execute_fueling'):
             return
 
-        self.get_logger().info('robot movement completed')
+        self.get_logger().info(f'robot command completed: {msg.data}')
         self.publish_status('move_completed')
         self.publish_done(True)
         self.reset_state()

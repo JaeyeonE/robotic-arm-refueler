@@ -208,15 +208,9 @@ async function loadTask() {
             }
         });
 
-        // Progress bar (step 2)
+        // Progress bar (전체 진행률)
         const prog = document.getElementById('kStepProgress');
-        if (step === 2) {
-            prog.style.width = ((task.step_progress || 0) * 100) + '%';
-        } else if (step > 2) {
-            prog.style.width = '100%';
-        } else {
-            prog.style.width = '0%';
-        }
+        prog.style.width = ((task.step_progress || 0) * 100) + '%';
 
         // 가이드
         document.getElementById('kGuide').textContent = GUIDE_MSGS[step] || '';
