@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoJet — Login</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: #f0f2f5;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.login-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 380px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.login-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 4px; color: #1a1f2e;
+    text-align: center; margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.login-logo-icon {
+    width: 32px; height: 32px; background: #1a1f2e; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+}
+.login-logo-icon svg { width: 18px; height: 18px; }
+.login-sub {
+    text-align: center; font-size: 12px; color: #9ca3af; margin-bottom: 28px;
+}
+
+.form-group { margin-bottom: 14px; }
+.form-label {
+    display: block; font-size: 11px; font-weight: 600; color: #6b7280;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px;
+}
+.form-input {
+    width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 8px;
+    font-size: 14px; font-family: 'DM Sans', sans-serif; color: #1a1f2e;
+    outline: none; transition: border-color 0.2s;
+}
+.form-input:focus { border-color: #2563eb; }
+
+.btn-login {
+    width: 100%; background: #1a1f2e; color: white; border: none; border-radius: 8px;
+    padding: 12px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; letter-spacing: 0.5px; margin-top: 8px; transition: background 0.2s;
+}
+.btn-login:hover { background: #374151; }
+.btn-login:disabled { background: #9ca3af; cursor: not-allowed; }
+
+.login-error {
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+    padding: 8px 12px; font-size: 12px; color: #dc2626; margin-bottom: 14px;
+    display: none;
+}
+
+.login-footer {
+    text-align: center; margin-top: 18px; font-size: 11px; color: #9ca3af;
+}
+.login-footer a {
+    color: #2563eb; text-decoration: none; font-weight: 500;
+}
+.login-footer a:hover { text-decoration: underline; }
+
+.register-fields { display: none; }
+.register-fields.show { display: block; }
+
+.toggle-mode {
+    display: block; text-align: center; margin-top: 12px;
+    font-size: 12px; color: #2563eb; cursor: pointer; font-weight: 500;
+}
+.toggle-mode:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="login-logo">
+        <div class="login-logo-icon">
+            <svg viewBox="0 0 16 16" fill="none">
+                <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" stroke="white" stroke-width="1.5" fill="none"/>
+                <circle cx="8" cy="8" r="2" fill="white"/>
+            </svg>
+        </div>
+        AUTOJET
+    </div>
+    <div class="login-sub">자동 주유 시스템</div>
+
+    <div class="login-error" id="loginError"></div>
+
+    <form id="loginForm" onsubmit="return handleSubmit(event)">
+        <div class="form-group">
+            <label class="form-label">아이디</label>
+            <input class="form-input" type="text" id="inputUser" placeholder="username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label class="form-label">비밀번호</label>
+            <input class="form-input" type="password" id="inputPw" placeholder="password" required autocomplete="current-password">
+        </div>
+
+        <div class="register-fields" id="regFields">
+            <div class="form-group">
+                <label class="form-label">이름</label>
+                <input class="form-input" type="text" id="inputName" placeholder="홍길동">
+            </div>
+            <div class="form-group">
+                <label class="form-label">전화번호 (선택)</label>
+                <input class="form-input" type="text" id="inputPhone" placeholder="010-0000-0000">
+            </div>
+        </div>
+
+        <button class="btn-login" type="submit" id="btnSubmit">로그인</button>
+    </form>
+
+    <span class="toggle-mode" id="toggleMode" onclick="toggleRegister()">계정이 없으신가요? 회원가입</span>
+
+    <div class="login-footer">DART-STUDIO &middot; Doosan E0509</div>
+</div>
+
+<script>
+let isRegister = false;
+
+function toggleRegister() {
+    isRegister = !isRegister;
+    document.getElementById('regFields').className = isRegister ? 'register-fields show' : 'register-fields';
+    document.getElementById('btnSubmit').textContent = isRegister ? '회원가입' : '로그인';
+    document.getElementById('toggleMode').textContent = isRegister
+        ? '이미 계정이 있으신가요? 로그인'
+        : '계정이 없으신가요? 회원가입';
+    document.getElementById('loginError').style.display = 'none';
+}
+
+function showError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+async function handleSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    document.getElementById('loginError').style.display = 'none';
+
+    const username = document.getElementById('inputUser').value.trim();
+    const password = document.getElementById('inputPw').value;
+
+    try {
+        if (isRegister) {
+            const name = document.getElementById('inputName').value.trim();
+            if (!name) { showError('이름을 입력하세요'); btn.disabled = false; return; }
+
+            const regRes = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username, password, name,
+                    phone: document.getElementById('inputPhone').value.trim() || null,
+                }),
+            });
+            const regData = await regRes.json();
+            if (!regRes.ok) { showError(regData.error); btn.disabled = false; return; }
+            toggleRegister();
+            showError('');
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            showError(data.error);
+            btn.disabled = false;
+            return;
+        }
+
+        if (data.role === 'admin') {
+            window.location.href = '/admin';
+        } else {
+            const params = new URLSearchParams(window.location.search);
+            const next = params.get('next');
+            window.location.href = next || '/kiosk/1/1';
+        }
+    } catch (err) {
+        showError('서버 연결 실패');
+        btn.disabled = false;
+    }
+}
+</script>
+</body>
+</html>

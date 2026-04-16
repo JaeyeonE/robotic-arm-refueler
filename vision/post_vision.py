@@ -8,7 +8,8 @@ from datetime import datetime
 import math
 from ultralytics import YOLO
 
-model = YOLO('20260415_1149.pt')
+# 모델 다른 것으로 수정 필요
+model = YOLO('refueling.pt')
 
 # ─── Flask API 설정 ───
 API_URL = "http://localhost:5000"
@@ -36,7 +37,7 @@ R_cam2robot = np.array([[-1,  0,  0],
 
 t_cam2robot = np.array([400.0, 238.0, 110.0])  # mm
 
-CONF_THRESHOLD = 0.80
+CONF_THRESHOLD = 0.70
 SAVE_DIR = "captures"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
@@ -103,6 +104,8 @@ try:
 
                 u, v = (x1 + x2) // 2, (y1 + y2) // 2
                 depth_val = depth_frame.get_distance(u, v)
+                if depth_val <= 0.0:
+                    continue
                 robot_xyz = pixel_to_robot(u, v, depth_val)
                 rx, ry, rz = robot_xyz
 

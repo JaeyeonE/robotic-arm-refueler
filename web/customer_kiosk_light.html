@@ -1,0 +1,628 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.k-root {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0f2f5;
+  min-height: 640px;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #1a1f2e;
+}
+
+.k-header {
+  background: #ffffff;
+  border-bottom: 2px solid #e8eaed;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.k-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: #1a1f2e;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.k-logo-icon {
+  width: 28px; height: 28px;
+  background: #1a1f2e;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.k-logo-icon svg { width: 16px; height: 16px; }
+
+.k-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500; color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.k-status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%; background: #16a34a;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.k-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #e8eaed;
+}
+
+.k-col {
+  background: #ffffff;
+  padding: 20px;
+}
+
+.sec-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.sec-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #f3f4f6;
+}
+
+.cam-box {
+  background: #0f172a;
+  border-radius: 10px;
+  height: 172px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.cam-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(99,179,237,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,179,237,0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.cam-scanline {
+  position: absolute;
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(99,179,237,0.6), transparent);
+  animation: scan 3s linear infinite;
+  pointer-events: none;
+}
+@keyframes scan { 0%{top:0} 100%{top:100%} }
+
+.det-frame {
+  position: absolute;
+  width: 86px; height: 58px;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.det-frame-box {
+  position: absolute; inset: 0;
+  border: 2px solid #fb923c;
+  border-radius: 4px;
+  animation: det-flash 1.8s ease-in-out infinite;
+}
+
+@keyframes det-flash { 0%,100%{border-color:#fb923c} 50%{border-color:#fbbf24} }
+
+.det-tag-badge {
+  position: absolute;
+  top: -22px; left: 0;
+  background: #fb923c;
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.det-dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: #fb923c;
+  border-radius: 50%;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+}
+
+.cam-corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: #63b3ed;
+  border-style: solid; border-width: 0;
+}
+.cam-corner.tl { top:8px; left:8px; border-top-width:2px; border-left-width:2px; }
+.cam-corner.tr { top:8px; right:8px; border-top-width:2px; border-right-width:2px; }
+.cam-corner.bl { bottom:8px; left:8px; border-bottom-width:2px; border-left-width:2px; }
+.cam-corner.br { bottom:8px; right:8px; border-bottom-width:2px; border-right-width:2px; }
+
+.cam-info-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(15,23,42,0.85);
+  padding: 5px 10px;
+  display: flex; justify-content: space-between;
+  align-items: center;
+}
+
+.cam-info-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.cam-info-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: #fb923c;
+  background: rgba(251,146,60,0.15);
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.guide-banner {
+  display: flex; align-items: center; gap: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+}
+
+.guide-dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: blink 1.5s infinite; flex-shrink: 0; }
+.guide-text { font-size: 12px; font-weight: 500; color: #15803d; }
+
+.fuel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.fuel-opt {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.fuel-opt:hover { border-color: #93c5fd; background: #eff6ff; color: #1d4ed8; }
+
+.fuel-opt.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.fuel-opt .fuel-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+.input-row {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.mode-btn {
+  flex: 1;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 7px;
+  padding: 8px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.mode-btn.active {
+  background: #1a1f2e;
+  border-color: #1a1f2e;
+  color: white;
+}
+
+.amt-input {
+  flex: 2;
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'DM Mono', monospace;
+  color: #1a1f2e;
+  text-align: center;
+  width: 100%;
+  outline: none;
+}
+
+.amt-input:focus { border-color: #2563eb; }
+
+.btn-start {
+  width: 100%;
+  background: #1a1f2e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+
+.btn-start:hover { background: #374151; }
+
+.btn-estop {
+  width: 100%;
+  background: #dc2626;
+  color: white;
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-estop:hover { background: #b91c1c; border-color: #b91c1c; transform: scale(1.01); }
+.btn-estop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(255,255,255,0.06) 8px,
+    rgba(255,255,255,0.06) 16px
+  );
+}
+
+/* RIGHT COLUMN */
+
+.step-list { margin-bottom: 14px; }
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+  opacity: 0.4;
+  transition: opacity 0.4s;
+}
+
+.step-item:last-child { border-bottom: none; }
+.step-item.done, .step-item.active { opacity: 1; }
+
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  flex-shrink: 0;
+  font-family: 'DM Mono', monospace;
+  background: white;
+}
+
+.step-item.done .step-num {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: white;
+}
+
+.step-item.active .step-num {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+  animation: step-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes step-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0.3)} 50%{box-shadow:0 0 0 6px rgba(37,99,235,0)} }
+
+.step-body { flex: 1; }
+.step-name { font-size: 13px; font-weight: 600; color: #1a1f2e; }
+.step-sub { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+.step-item.active .step-sub { color: #2563eb; }
+
+.progress-track {
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  margin-top: 5px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  border-radius: 2px;
+  animation: prog-run 8s linear infinite;
+}
+
+@keyframes prog-run { 0%{width:0%} 100%{width:82%} }
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.metric-tile {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.metric-tile-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.metric-tile-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: #1a1f2e;
+}
+
+.metric-tile-unit {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-left: 2px;
+}
+
+.metric-tile.highlight { background: #eff6ff; border-color: #bfdbfe; }
+.metric-tile.highlight .metric-tile-val { color: #2563eb; }
+
+.syslog-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.syslog-line { padding: 2px 0; display: flex; gap: 6px; }
+.syslog-line .tag { padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+.tag-ok { background: #dcfce7; color: #15803d; }
+.tag-info { background: #dbeafe; color: #1d4ed8; }
+.tag-warn { background: #fef3c7; color: #b45309; }
+</style>
+
+<div class="k-root">
+  <div class="k-header">
+    <div class="k-logo">
+      <div class="k-logo-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" stroke="white" stroke-width="1.5" fill="none"/>
+          <circle cx="8" cy="8" r="2" fill="white"/>
+        </svg>
+      </div>
+      AUTOJET REFUELING
+    </div>
+    <div class="k-status">
+      <div class="k-status-dot"></div>
+      시스템 정상 운행 중
+    </div>
+  </div>
+
+  <div class="k-body">
+    <!-- LEFT -->
+    <div class="k-col">
+      <div class="sec-title">실시간 카메라 피드</div>
+      <div class="cam-box">
+        <div class="cam-grid"></div>
+        <div class="cam-scanline"></div>
+        <div class="cam-corner tl"></div>
+        <div class="cam-corner tr"></div>
+        <div class="cam-corner bl"></div>
+        <div class="cam-corner br"></div>
+        <div class="det-frame">
+          <div class="det-tag-badge">주유구 94.2%</div>
+          <div class="det-frame-box"></div>
+          <div class="det-dot"></div>
+        </div>
+        <div class="cam-info-bar">
+          <span class="cam-info-text">RealSense D455 · 30fps · D:0.38m</span>
+          <span class="cam-info-badge">YOLO DETECT</span>
+        </div>
+      </div>
+
+      <div class="guide-banner">
+        <div class="guide-dot"></div>
+        <span class="guide-text">주유구 위치 확인 완료 — 로봇암 접근 준비 중</span>
+      </div>
+
+      <div class="sec-title">주유 정보 입력</div>
+      <div class="fuel-grid">
+        <div class="fuel-opt active" onclick="pickFuel(this)">
+          <span class="fuel-icon">🔴</span>휘발유
+        </div>
+        <div class="fuel-opt" onclick="pickFuel(this)">
+          <span class="fuel-icon">🟤</span>경유
+        </div>
+        <div class="fuel-opt" onclick="pickFuel(this)">
+          <span class="fuel-icon">🔵</span>LPG
+        </div>
+        <div class="fuel-opt" onclick="pickFuel(this)">
+          <span class="fuel-icon">⚡</span>전기
+        </div>
+      </div>
+
+      <div class="input-row">
+        <div class="mode-btn active" onclick="pickMode(this,'금액')">금액 (₩)</div>
+        <div class="mode-btn" onclick="pickMode(this,'리터')">리터 (L)</div>
+        <input class="amt-input" type="text" value="50,000" id="kAmtInput">
+      </div>
+
+      <button class="btn-start" onclick="doStart()">주유 시작 →</button>
+      <button class="btn-estop" onclick="doEstop()">⬛ 비상 정지  E-STOP</button>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="k-col">
+      <div class="sec-title">주유 진행 상황</div>
+      <div class="step-list" id="kSteps">
+        <div class="step-item done">
+          <div class="step-num">✓</div>
+          <div class="step-body">
+            <div class="step-name">단계 1: 주유구 탐색 완료</div>
+            <div class="step-sub">비전 인식 성공 · 좌표 확정</div>
+          </div>
+        </div>
+        <div class="step-item active">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-name">단계 2: 로봇암 접근 중</div>
+            <div class="step-sub">TCP → 목표 좌표 이동 중...</div>
+            <div class="progress-track"><div class="progress-fill"></div></div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-name">단계 3: 주유 중</div>
+            <div class="step-sub">주유 노즐 삽입 대기</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-name">단계 4: 로봇 복귀 및 완료</div>
+            <div class="step-sub">대기 중</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">실시간 주유 현황</div>
+      <div class="metric-grid">
+        <div class="metric-tile highlight">
+          <div class="metric-tile-label">주유량</div>
+          <div class="metric-tile-val" id="kLiters">12.4<span class="metric-tile-unit">L</span></div>
+        </div>
+        <div class="metric-tile highlight">
+          <div class="metric-tile-label">주유 금액</div>
+          <div class="metric-tile-val" id="kMoney">22,320<span class="metric-tile-unit">₩</span></div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-tile-label">경과 시간</div>
+          <div class="metric-tile-val" id="kTime">00:47<span class="metric-tile-unit"></span></div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-tile-label">예상 잔여</div>
+          <div class="metric-tile-val" id="kRem">01:23<span class="metric-tile-unit"></span></div>
+        </div>
+      </div>
+
+      <div class="sec-title">시스템 로그</div>
+      <div class="syslog-box">
+        <div class="syslog-line"><span class="tag tag-ok">OK</span><span>비전 모듈 주유구 인식 완료 (94.2%)</span></div>
+        <div class="syslog-line"><span class="tag tag-ok">OK</span><span>DART 좌표 수신: X=312 Y=−45 Z=188</span></div>
+        <div class="syslog-line"><span class="tag tag-info">INFO</span><span>Joint 1~6 이동 명령 하달 중...</span></div>
+        <div class="syslog-line"><span class="tag tag-warn">WARN</span><span>충돌 감지 민감도: Level 3 (표준)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function pickFuel(el) {
+  document.querySelectorAll('.fuel-opt').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+function pickMode(el, mode) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('kAmtInput').value = mode === '금액' ? '50,000' : '30.0';
+}
+function doStart() {
+  const items = document.querySelectorAll('.step-item');
+  setTimeout(() => {
+    items[1].className = 'step-item done';
+    items[1].querySelector('.step-num').textContent = '✓';
+    items[2].className = 'step-item active';
+  }, 1800);
+  setTimeout(() => {
+    items[2].className = 'step-item done';
+    items[2].querySelector('.step-num').textContent = '✓';
+    items[3].className = 'step-item active';
+  }, 4500);
+}
+function doEstop() {
+  const b = document.querySelector('.btn-estop');
+  b.textContent = '⚠ 비상 정지 실행됨 — 로봇 즉시 정지';
+  b.style.background = '#7f1d1d';
+  document.querySelectorAll('.step-item').forEach(s => s.style.opacity = '0.3');
+}
+
+let secs = 47, liters = 12.4;
+setInterval(() => {
+  secs++; liters = parseFloat((liters + 0.15).toFixed(1));
+  const mm = String(Math.floor(secs/60)).padStart(2,'0');
+  const ss = String(secs % 60).padStart(2,'0');
+  document.getElementById('kTime').innerHTML = mm+':'+ss;
+  document.getElementById('kLiters').innerHTML = liters.toFixed(1)+'<span class="metric-tile-unit"> L</span>';
+  document.getElementById('kMoney').innerHTML = (liters*1800).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')+'<span class="metric-tile-unit"> ₩</span>';
+  const rem = Math.max(0, 170 - secs);
+  const rm = String(Math.floor(rem/60)).padStart(2,'0');
+  const rs = String(rem%60).padStart(2,'0');
+  document.getElementById('kRem').innerHTML = rm+':'+rs;
+}, 1000);
+</script>

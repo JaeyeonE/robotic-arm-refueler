@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Monitor — DART-STUDIO</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { background: #e2e8f0; }
+
+.a-root {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  color: #1a1f2e;
+  display: flex; flex-direction: column;
+}
+
+.a-topbar {
+  background: #1a1f2e;
+  padding: 11px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.a-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px; letter-spacing: 3px; color: #e2e8f0;
+  display: flex; align-items: center; gap: 10px;
+}
+.a-brand-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.a-badges { display: flex; gap: 8px; align-items: center; }
+.a-badge {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  padding: 3px 10px; border-radius: 20px; font-weight: 500;
+}
+.a-badge-green { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.a-badge-amber { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.a-badge-blue  { background: rgba(147,197,253,0.15); color: #93c5fd; border: 1px solid rgba(147,197,253,0.3); }
+.a-badge-red   { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); }
+.a-clock { font-family: 'DM Mono', monospace; font-size: 13px; color: #64748b; }
+
+.a-body { display: flex; flex: 1; }
+
+/* SIDEBAR */
+.a-sidebar {
+  width: 220px; background: #ffffff; border-right: 1px solid #e2e8f0;
+  padding: 16px; flex-shrink: 0; overflow-y: auto;
+}
+.a-side-sec {
+  font-size: 9px; font-weight: 600; letter-spacing: 2px; color: #94a3b8;
+  text-transform: uppercase; margin-bottom: 8px; margin-top: 14px;
+}
+.a-side-sec:first-child { margin-top: 0; }
+.a-side-select {
+  width: 100%; padding: 7px 10px; border: 1.5px solid #e5e7eb; border-radius: 7px;
+  font-size: 12px; font-family: 'DM Sans', sans-serif; color: #1a1f2e;
+  background: #f9fafb; outline: none; cursor: pointer;
+}
+.a-side-select:focus { border-color: #2563eb; }
+
+.station-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.station-card {
+  background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 8px;
+  padding: 10px 12px; cursor: pointer; transition: all 0.15s;
+}
+.station-card:hover { border-color: #93c5fd; background: #eff6ff; }
+.station-card.active { border-color: #2563eb; background: #eff6ff; }
+.station-card-title {
+  font-size: 12px; font-weight: 600; color: #1a1f2e; margin-bottom: 3px;
+}
+.station-card-meta {
+  font-size: 10px; color: #9ca3af; font-family: 'DM Mono', monospace;
+}
+.station-badge {
+  display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 6px;
+  border-radius: 3px; margin-left: 6px;
+}
+.sb-idle { background: #f0fdf4; color: #16a34a; }
+.sb-busy { background: #fef3c7; color: #b45309; }
+.sb-offline { background: #fee2e2; color: #dc2626; }
+
+.btn-logout {
+  width: 100%; margin-top: 20px; background: none; border: 1px solid #e5e7eb;
+  border-radius: 7px; padding: 7px; font-size: 11px; color: #6b7280;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.btn-logout:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+/* MAIN */
+.a-main { flex: 1; }
+.a-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #e2e8f0; height: 100%; }
+.a-panel { background: #ffffff; padding: 16px; }
+.a-sec {
+  font-size: 9px; font-weight: 600; letter-spacing: 2px; color: #94a3b8;
+  text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.a-sec::after { content: ''; flex: 1; height: 1px; background: #f1f5f9; }
+.a-divider { border: none; border-top: 1px solid #f1f5f9; margin: 12px 0; }
+
+/* JOINTS */
+.jrow { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.jlabel { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; color: #94a3b8; width: 18px; flex-shrink: 0; }
+.jbar-bg { flex: 1; height: 7px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+.jbar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #2563eb, #60a5fa); transition: width 1s ease; }
+.jval { font-family: 'DM Mono', monospace; font-size: 10px; color: #334155; width: 44px; text-align: right; flex-shrink: 0; }
+.jtorq { font-family: 'DM Mono', monospace; font-size: 9px; color: #94a3b8; width: 36px; text-align: right; flex-shrink: 0; }
+
+/* TCP */
+.tcp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.tcp-tile { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: 8px 10px; }
+.tcp-axis-lbl { font-size: 9px; font-weight: 600; color: #94a3b8; letter-spacing: 1px; margin-bottom: 2px; }
+.tcp-num { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; color: #1e40af; }
+.tcp-u { font-size: 9px; color: #94a3b8; margin-left: 1px; }
+
+.chart-wrap { position: relative; height: 110px; }
+
+/* VISION */
+.v-feed {
+  background: #0f172a; border-radius: 8px;
+  position: relative; overflow: hidden; margin-bottom: 10px;
+}
+.v-feed img {
+  width: 100%; display: block; border-radius: 8px;
+  min-height: 164px; object-fit: contain; background: #0f172a;
+}
+.v-feed .v-placeholder {
+  width: 100%; min-height: 164px;
+  display: flex; align-items: center; justify-content: center;
+  color: #64748b; font-size: 11px; font-family: 'DM Mono', monospace;
+}
+.v-footer { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15,23,42,0.85); padding: 5px 10px; display: flex; justify-content: space-between; }
+.v-ft { font-family: 'DM Mono', monospace; font-size: 9px; color: #64748b; }
+.v-ft.orange { color: #fb923c; }
+
+.err-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f8fafc; font-size: 11px; }
+.err-key { color: #64748b; font-weight: 500; }
+.err-val { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 4px; }
+.err-ok { background: #f0fdf4; color: #16a34a; }
+.err-warn { background: #fefce8; color: #ca8a04; }
+
+.log-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; height: 380px; overflow-y: auto; }
+.log-entry { display: flex; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f1f5f9; font-size: 10px; font-family: 'DM Mono', monospace; }
+.log-ts { color: #94a3b8; flex-shrink: 0; }
+.log-lv { flex-shrink: 0; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; align-self: center; }
+.lv-ok   { background: #dcfce7; color: #15803d; }
+.lv-info { background: #dbeafe; color: #1d4ed8; }
+.lv-warn { background: #fef3c7; color: #b45309; }
+.lv-err  { background: #fee2e2; color: #dc2626; }
+.log-msg { color: #475569; }
+
+.no-station {
+  display: flex; align-items: center; justify-content: center;
+  color: #94a3b8; font-size: 13px; height: 100%;
+}
+    </style>
+</head>
+<body>
+<div class="a-root">
+  <div class="a-topbar">
+    <div class="a-brand">
+      <div class="a-brand-dot" id="aBrandDot"></div>
+      DART-STUDIO MONITOR · DOOSAN E0509
+    </div>
+    <div class="a-badges">
+      <span class="a-badge a-badge-green" id="badgeRobot">ROBOT OFFLINE</span>
+      <span class="a-badge a-badge-amber" id="badgeTask">IDLE</span>
+      <span class="a-badge a-badge-blue" id="badgeDart">DART DISCONNECTED</span>
+      <span class="a-clock" id="aClock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="a-body">
+    <!-- SIDEBAR -->
+    <div class="a-sidebar">
+      <div class="a-side-sec">지점 선택</div>
+      <select class="a-side-select" id="aBranchSelect" onchange="onBranchChange()">
+        <option value="">로딩 중...</option>
+      </select>
+
+      <div class="a-side-sec">스테이션</div>
+      <div class="station-list" id="aStationList">
+        <div style="color:#94a3b8;font-size:11px;">지점을 선택하세요</div>
+      </div>
+
+      <button class="btn-logout" onclick="doLogout()">로그아웃</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="a-main" id="aMain">
+      <div class="no-station" id="aNoStation">좌측에서 스테이션을 선택하세요</div>
+
+      <div class="a-grid" id="aGrid" style="display:none;">
+        <!-- PANEL 1: ROBOT STATE -->
+        <div class="a-panel">
+          <div class="a-sec">관절 상태 (Joint 1 ~ 6)</div>
+          <div id="aJoints"><div style="color:#94a3b8;font-size:11px;">데이터 대기 중...</div></div>
+          <hr class="a-divider">
+          <div class="a-sec">TCP 좌표</div>
+          <div class="tcp-grid" id="aTcp"><div style="color:#94a3b8;font-size:11px;">데이터 대기 중...</div></div>
+          <hr class="a-divider">
+          <div class="a-sec">관절 토크 (Nm)</div>
+          <div class="chart-wrap">
+            <canvas id="aTorqueChart"></canvas>
+          </div>
+        </div>
+
+        <!-- PANEL 2: VISION -->
+        <div class="a-panel">
+          <div class="a-sec">비전 인식 화면 (RealSense D455)</div>
+          <div class="v-feed">
+            <div class="v-placeholder" id="aVidPlaceholder">카메라 연결 대기 중...</div>
+            <img id="aVidImg" src="" alt="Vision Feed" style="display:none;">
+            <div class="v-footer">
+              <span class="v-ft" id="vDepth">YOLO v8 · D: -- m</span>
+              <span class="v-ft orange" id="vBboxTag">STANDBY</span>
+            </div>
+          </div>
+
+          <div class="a-sec">인식 상태</div>
+          <div class="err-row"><span class="err-key">인식 신뢰도</span><span class="err-val err-ok" id="aConf">-- %</span></div>
+          <div class="err-row"><span class="err-key">손잡이 각도</span><span class="err-val" id="aAngle" style="color:#64748b;">-- °</span></div>
+        </div>
+
+        <!-- PANEL 3: LOG -->
+        <div class="a-panel">
+          <div class="a-sec">시스템 로그</div>
+          <div class="log-box" id="aLog"><div style="color:#94a3b8;font-size:11px;">로그 대기 중...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="/static/admin.js"></script>
+</body>
+</html>

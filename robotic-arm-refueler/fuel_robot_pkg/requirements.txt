@@ -1,0 +1,41 @@
+# ROS 2 Humble Core (설치 필수)
+# 참고: ROS 2 Humble은 시스템 패키지로 설치
+# apt install ros-humble-desktop-full
+
+# Python dependencies for fuel_robot_pkg
+# Install with: pip install -r requirements.txt
+
+# ROS 2 Python components
+rclpy>=3.0.0          # ROS 2 Python client library
+rclcpp_bindings       # C++ bindings (system package)
+
+# Message types
+geometry_msgs         # Basic geometry types
+std_msgs             # Standard ROS 2 message types
+sensor_msgs          # Sensor data types (camera, etc)
+trajectory_msgs      # Trajectory types
+nav_msgs            # Navigation types
+
+# Vision/AI
+opencv-python>=4.5.0  # Computer vision
+torch>=2.0.0          # PyTorch for YOLOv12
+torchvision>=0.15.0   # Vision models
+ultralytics>=8.0.0    # YOLOv12 implementation
+
+# Configuration
+python-dotenv>=0.19.0  # .env file support
+
+# Utilities
+numpy>=1.20.0         # Numerical computing
+pyyaml>=5.4           # YAML config files
+pydantic>=1.8.0       # Data validation
+
+# Logging & debugging
+colorama>=0.4.4       # Colored terminal output
+loguru>=0.6.0         # Enhanced logging
+
+# Optional: for development
+# pytest>=6.0.0         # Testing
+# black>=21.0           # Code formatting
+# pylint>=2.10.0        # Code linting
+# mypy>=0.900           # Type checking

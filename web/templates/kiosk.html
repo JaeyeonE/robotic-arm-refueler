@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoJet Refueling</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #e8eaed; }
+
+.k-root {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  color: #1a1f2e;
+}
+.k-header {
+  background: #ffffff;
+  border-bottom: 2px solid #e8eaed;
+  padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.k-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 3px; color: #1a1f2e;
+  display: flex; align-items: center; gap: 10px;
+}
+.k-logo-icon {
+  width: 28px; height: 28px; background: #1a1f2e; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+.k-logo-icon svg { width: 16px; height: 16px; }
+.k-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500; color: #16a34a;
+  background: #f0fdf4; border: 1px solid #bbf7d0;
+  padding: 4px 12px; border-radius: 20px;
+}
+.k-status.offline { color: #dc2626; background: #fef2f2; border-color: #fecaca; }
+.k-status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #16a34a;
+  animation: blink 2s infinite;
+}
+.k-status.offline .k-status-dot { background: #dc2626; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.k-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #e8eaed; }
+.k-col { background: #ffffff; padding: 20px; }
+
+.sec-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #9ca3af;
+  text-transform: uppercase; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sec-title::after { content: ''; flex: 1; height: 1px; background: #f3f4f6; }
+
+/* CAMERA */
+.cam-box {
+  background: #0f172a; border-radius: 10px;
+  position: relative; overflow: hidden;
+  margin-bottom: 10px;
+}
+.cam-box img {
+  width: 100%; display: block; border-radius: 10px;
+  min-height: 172px; object-fit: contain; background: #0f172a;
+}
+.cam-box .cam-placeholder {
+  width: 100%; min-height: 172px;
+  display: flex; align-items: center; justify-content: center;
+  color: #64748b; font-size: 12px; font-family: 'DM Mono', monospace;
+}
+.cam-info-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15,23,42,0.85); padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; }
+.cam-info-text { font-family: 'DM Mono', monospace; font-size: 9px; color: #94a3b8; }
+.cam-info-badge { font-family: 'DM Mono', monospace; font-size: 9px; color: #fb923c; background: rgba(251,146,60,0.15); padding: 2px 7px; border-radius: 3px; }
+.btn-capture {
+  width: 100%; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  padding: 8px; font-size: 12px; font-weight: 500; color: #475569;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; margin-bottom: 14px; transition: all 0.15s;
+}
+.btn-capture:hover { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; }
+
+/* GUIDE */
+.guide-banner { display: flex; align-items: center; gap: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
+.guide-dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: blink 1.5s infinite; flex-shrink: 0; }
+.guide-text { font-size: 12px; font-weight: 500; color: #15803d; }
+
+/* FUEL SELECT */
+.fuel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 14px; }
+.fuel-opt {
+  background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 8px;
+  padding: 10px 8px; text-align: center; cursor: pointer;
+  transition: all 0.15s; font-size: 12px; font-weight: 500; color: #6b7280;
+}
+.fuel-opt:hover { border-color: #93c5fd; background: #eff6ff; color: #1d4ed8; }
+.fuel-opt.active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+.fuel-opt .fuel-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+
+.input-row { display: flex; gap: 7px; margin-bottom: 14px; }
+.mode-btn {
+  flex: 1; background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 7px;
+  padding: 8px 4px; font-size: 11px; font-weight: 500; color: #6b7280;
+  cursor: pointer; text-align: center; transition: all 0.15s;
+}
+.mode-btn.active { background: #1a1f2e; border-color: #1a1f2e; color: white; }
+.amt-input {
+  flex: 2; background: #ffffff; border: 1.5px solid #d1d5db; border-radius: 7px;
+  padding: 8px 12px; font-size: 16px; font-weight: 600;
+  font-family: 'DM Mono', monospace; color: #1a1f2e; text-align: center; width: 100%; outline: none;
+}
+.amt-input:focus { border-color: #2563eb; }
+
+.btn-start {
+  width: 100%; background: #1a1f2e; color: white; border: none; border-radius: 8px;
+  padding: 13px; font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+  cursor: pointer; letter-spacing: 0.5px; margin-bottom: 10px; transition: all 0.2s;
+}
+.btn-start:hover { background: #374151; }
+.btn-start:disabled { background: #9ca3af; cursor: not-allowed; }
+
+.btn-estop {
+  width: 100%; background: #dc2626; color: white; border: 2px solid #dc2626;
+  border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s; position: relative; overflow: hidden;
+}
+.btn-estop:hover { background: #b91c1c; border-color: #b91c1c; }
+.btn-estop::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(-45deg,transparent,transparent 8px,rgba(255,255,255,0.06) 8px,rgba(255,255,255,0.06) 16px);
+}
+
+/* STEPS */
+.step-list { margin-bottom: 14px; }
+.step-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; opacity: 0.4; transition: opacity 0.4s; }
+.step-item:last-child { border-bottom: none; }
+.step-item.done, .step-item.active { opacity: 1; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #9ca3af; flex-shrink: 0;
+  font-family: 'DM Mono', monospace; background: white;
+}
+.step-item.done .step-num { background: #16a34a; border-color: #16a34a; color: white; }
+.step-item.active .step-num { background: #2563eb; border-color: #2563eb; color: white; animation: step-pulse 1.5s ease-in-out infinite; }
+@keyframes step-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0.3)} 50%{box-shadow:0 0 0 6px rgba(37,99,235,0)} }
+.step-body { flex: 1; }
+.step-name { font-size: 13px; font-weight: 600; color: #1a1f2e; }
+.step-sub { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+.step-item.active .step-sub { color: #2563eb; }
+.progress-track { height: 4px; background: #f3f4f6; border-radius: 2px; margin-top: 5px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #2563eb, #60a5fa); border-radius: 2px; transition: width 0.5s ease; }
+
+/* METRICS */
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.metric-tile { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; }
+.metric-tile-label { font-size: 10px; font-weight: 600; color: #9ca3af; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 4px; }
+.metric-tile-val { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; color: #1a1f2e; }
+.metric-tile-unit { font-size: 11px; color: #9ca3af; margin-left: 2px; }
+.metric-tile.highlight { background: #eff6ff; border-color: #bfdbfe; }
+.metric-tile.highlight .metric-tile-val { color: #2563eb; }
+
+/* SYSLOG */
+.syslog-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 10px; color: #64748b; max-height: 150px; overflow-y: auto; }
+.syslog-line { padding: 2px 0; display: flex; gap: 6px; }
+.syslog-line .tag { padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+.tag-ok { background: #dcfce7; color: #15803d; }
+.tag-info { background: #dbeafe; color: #1d4ed8; }
+.tag-warn { background: #fef3c7; color: #b45309; }
+.tag-err { background: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body>
+<div class="k-root">
+  <div class="k-header">
+    <div class="k-logo">
+      <div class="k-logo-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" stroke="white" stroke-width="1.5" fill="none"/>
+          <circle cx="8" cy="8" r="2" fill="white"/>
+        </svg>
+      </div>
+      AUTOJET REFUELING
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="k-status" id="kStatus">
+        <div class="k-status-dot"></div>
+        <span id="kStatusText">연결 중...</span>
+      </div>
+      <span style="font-size:11px;color:#6b7280;font-family:'DM Mono',monospace;" id="kStationLabel"></span>
+      <button onclick="doLogout()" style="background:none;border:1px solid #e5e7eb;border-radius:6px;padding:4px 10px;font-size:11px;color:#6b7280;cursor:pointer;font-family:'DM Sans',sans-serif;">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="k-body">
+    <!-- LEFT -->
+    <div class="k-col">
+      <div class="sec-title">실시간 카메라 피드</div>
+      <div class="cam-box">
+        <div class="cam-placeholder" id="kCamPlaceholder">카메라 연결 대기 중...</div>
+        <img id="kCamImg" src="" alt="Camera Feed" style="display:none;">
+        <div class="cam-info-bar">
+          <span class="cam-info-text" id="kCamInfo">RealSense D455 · 30fps · D:-- m</span>
+          <span class="cam-info-badge" id="kCamBadge">STANDBY</span>
+        </div>
+      </div>
+      <button class="btn-capture" onclick="doCapture()">📷 현재 프레임 저장</button>
+
+      <div class="guide-banner">
+        <div class="guide-dot"></div>
+        <span class="guide-text" id="kGuide">시스템 준비 중...</span>
+      </div>
+
+      <div class="sec-title">주유 정보 입력</div>
+      <div class="fuel-grid" id="kFuelGrid">
+        <div class="fuel-opt active" data-fuel="gasoline" onclick="pickFuel(this)"><span class="fuel-icon">🔴</span>휘발유</div>
+        <div class="fuel-opt" data-fuel="diesel" onclick="pickFuel(this)"><span class="fuel-icon">🟤</span>경유</div>
+        <div class="fuel-opt" data-fuel="lpg" onclick="pickFuel(this)"><span class="fuel-icon">🔵</span>LPG</div>
+        <div class="fuel-opt" data-fuel="electric" onclick="pickFuel(this)"><span class="fuel-icon">⚡</span>전기</div>
+      </div>
+
+      <div class="input-row">
+        <div class="mode-btn active" data-mode="amount" onclick="pickMode(this)">금액 (₩)</div>
+        <div class="mode-btn" data-mode="volume" onclick="pickMode(this)">리터 (L)</div>
+        <input class="amt-input" type="text" value="50,000" id="kAmtInput">
+      </div>
+
+      <button class="btn-start" id="kBtnStart" onclick="doStart()">주유 시작 →</button>
+      <button class="btn-estop" onclick="doEstop()">⬛ 비상 정지  E-STOP</button>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="k-col">
+      <div class="sec-title">주유 진행 상황</div>
+      <div class="step-list" id="kSteps">
+        <div class="step-item" data-step="1">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-name">단계 1: 주유구 탐색</div>
+            <div class="step-sub">비전 인식 대기</div>
+          </div>
+        </div>
+        <div class="step-item" data-step="2">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-name">단계 2: 로봇암 접근</div>
+            <div class="step-sub">대기 중</div>
+            <div class="progress-track"><div class="progress-fill" id="kStepProgress" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="step-item" data-step="3">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-name">단계 3: 주유 중</div>
+            <div class="step-sub">대기 중</div>
+          </div>
+        </div>
+        <div class="step-item" data-step="4">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-name">단계 4: 로봇 복귀 및 완료</div>
+            <div class="step-sub">대기 중</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">실시간 주유 현황</div>
+      <div class="metric-grid">
+        <div class="metric-tile highlight">
+          <div class="metric-tile-label">주유량</div>
+          <div class="metric-tile-val" id="kLiters">0.0<span class="metric-tile-unit">L</span></div>
+        </div>
+        <div class="metric-tile highlight">
+          <div class="metric-tile-label">주유 금액</div>
+          <div class="metric-tile-val" id="kMoney">0<span class="metric-tile-unit">₩</span></div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-tile-label">경과 시간</div>
+          <div class="metric-tile-val" id="kTime">00:00</div>
+        </div>
+        <div class="metric-tile">
+          <div class="metric-tile-label">예상 잔여</div>
+          <div class="metric-tile-val" id="kRem">--:--</div>
+        </div>
+      </div>
+
+      <div class="sec-title">시스템 로그</div>
+      <div class="syslog-box" id="kSyslog"><div>로그 대기 중...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STATION_ID = {{ station_id }};
+const BRANCH_ID = {{ branch_id }};
+const STATION_NO = {{ station_no }};
+</script>
+<script src="/static/kiosk.js"></script>
+</body>
+</html>

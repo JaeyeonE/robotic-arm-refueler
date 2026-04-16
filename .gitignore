@@ -1,0 +1,39 @@
+# DB
+*.db
+*.db-wal
+*.db-shm
+
+# Captures / images
+captures/
+*.jpg
+*.png
+*.zip
+
+# YOLO models / datasets
+*.pt
+*.onnx
+Fuel Cap.v11-exposure.yolov8/
+for_train/
+for_train_v4/
+data.yaml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Misc test scripts
+can_i_use_gpu.py
+rs_test.py
+rs_yolo_print_logs.py
+rs_yolo_test.py
+tf_advanced_test.py
+tf_test.py

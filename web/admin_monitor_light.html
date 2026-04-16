@@ -1,0 +1,519 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Bebas+Neue&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.a-root {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0f2f5;
+  min-height: 700px;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #1a1f2e;
+}
+
+.a-topbar {
+  background: #1a1f2e;
+  padding: 11px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.a-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px;
+  letter-spacing: 3px;
+  color: #e2e8f0;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.a-brand-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%; background: #4ade80;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.a-badges {
+  display: flex; gap: 8px; align-items: center;
+}
+
+.a-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.a-badge-green { background: rgba(74,222,128,0.15); color: #4ade80; border: 1px solid rgba(74,222,128,0.3); }
+.a-badge-amber { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.a-badge-blue  { background: rgba(147,197,253,0.15); color: #93c5fd; border: 1px solid rgba(147,197,253,0.3); }
+
+.a-clock {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.a-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: #e2e8f0;
+}
+
+.a-panel {
+  background: #ffffff;
+  padding: 16px;
+}
+
+.a-sec {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.a-sec::after {
+  content: ''; flex: 1; height: 1px; background: #f1f5f9;
+}
+
+.a-divider { border: none; border-top: 1px solid #f1f5f9; margin: 12px 0; }
+
+/* JOINTS */
+.jrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.jlabel {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.jbar-bg {
+  flex: 1;
+  height: 7px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.jbar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  transition: width 1s ease;
+}
+
+.jval {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #334155;
+  width: 44px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.jtorq {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: #94a3b8;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* TCP */
+.tcp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tcp-tile {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 8px 10px;
+}
+
+.tcp-axis-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.tcp-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 17px;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.tcp-u { font-size: 9px; color: #94a3b8; margin-left: 1px; }
+
+/* CHART */
+.chart-wrap { position: relative; height: 110px; }
+
+/* VISION */
+.v-feed {
+  background: #0f172a;
+  border-radius: 8px;
+  height: 164px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.v-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(99,179,237,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,179,237,0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.v-scan {
+  position: absolute;
+  width: 100%; height: 1.5px;
+  background: linear-gradient(90deg, transparent, rgba(99,179,237,0.7), transparent);
+  animation: vscan 2.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes vscan { 0%{top:0%} 100%{top:100%} }
+
+.v-bbox {
+  position: absolute;
+  width: 90px; height: 60px;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid #fb923c;
+  border-radius: 3px;
+  animation: vbbox 1.8s ease-in-out infinite;
+}
+@keyframes vbbox { 0%,100%{border-color:#fb923c} 50%{border-color:#fbbf24} }
+
+.v-bbox-tag {
+  position: absolute;
+  top: -20px; left: 0;
+  background: #fb923c;
+  color: white;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.v-dot {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: #fb923c;
+  border-radius: 50%;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+}
+
+.v-corner { position: absolute; width: 12px; height: 12px; border-color: #63b3ed; border-style: solid; border-width: 0; }
+.v-corner.tl { top:8px; left:8px; border-top-width:1.5px; border-left-width:1.5px; }
+.v-corner.tr { top:8px; right:8px; border-top-width:1.5px; border-right-width:1.5px; }
+.v-corner.bl { bottom:8px; left:8px; border-bottom-width:1.5px; border-left-width:1.5px; }
+.v-corner.br { bottom:8px; right:8px; border-bottom-width:1.5px; border-right-width:1.5px; }
+
+.v-footer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(15,23,42,0.85);
+  padding: 5px 10px;
+  display: flex; justify-content: space-between;
+}
+.v-ft { font-family: 'DM Mono', monospace; font-size: 9px; color: #64748b; }
+.v-ft.orange { color: #fb923c; }
+
+/* ERR ROWS */
+.err-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #f8fafc;
+  font-size: 11px;
+}
+
+.err-key { color: #64748b; font-weight: 500; }
+
+.err-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.err-ok { background: #f0fdf4; color: #16a34a; }
+.err-warn { background: #fefce8; color: #ca8a04; }
+
+/* LOG */
+.log-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  height: 380px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  display: flex;
+  gap: 6px;
+  padding: 3px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+}
+
+.log-ts { color: #94a3b8; flex-shrink: 0; }
+
+.log-lv {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  align-self: center;
+}
+
+.lv-ok   { background: #dcfce7; color: #15803d; }
+.lv-info { background: #dbeafe; color: #1d4ed8; }
+.lv-warn { background: #fef3c7; color: #b45309; }
+.lv-err  { background: #fee2e2; color: #dc2626; }
+
+.log-msg { color: #475569; }
+
+</style>
+
+<div class="a-root">
+  <div class="a-topbar">
+    <div class="a-brand">
+      <div class="a-brand-dot"></div>
+      DART-STUDIO MONITOR · DOOSAN E0509
+    </div>
+    <div class="a-badges">
+      <span class="a-badge a-badge-green">ROBOT ONLINE</span>
+      <span class="a-badge a-badge-amber">FUELING</span>
+      <span class="a-badge a-badge-blue">DART CONNECTED</span>
+      <span class="a-clock" id="aClock">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="a-grid">
+    <!-- PANEL 1: ROBOT STATE -->
+    <div class="a-panel">
+      <div class="a-sec">관절 상태 (Joint 1 ~ 6)</div>
+      <div id="aJoints"></div>
+      <hr class="a-divider">
+      <div class="a-sec">TCP 좌표</div>
+      <div class="tcp-grid" id="aTcp"></div>
+      <hr class="a-divider">
+      <div class="a-sec">관절 토크 (Nm)</div>
+      <div class="chart-wrap">
+        <canvas id="aTorqueChart" role="img" aria-label="Joint 1~6 토크 막대 차트">Joint torque values</canvas>
+      </div>
+    </div>
+
+    <!-- PANEL 2: VISION -->
+    <div class="a-panel">
+      <div class="a-sec">비전 인식 화면 (RealSense D455)</div>
+      <div class="v-feed">
+        <div class="v-grid"></div>
+        <div class="v-scan"></div>
+        <div class="v-corner tl"></div>
+        <div class="v-corner tr"></div>
+        <div class="v-corner bl"></div>
+        <div class="v-corner br"></div>
+        <div class="v-bbox">
+          <div class="v-bbox-tag">주유구 94.2%</div>
+          <div class="v-dot"></div>
+        </div>
+        <div class="v-footer">
+          <span class="v-ft">YOLO v8 · OpenCV · 30fps</span>
+          <span class="v-ft orange">D: 0.38 m</span>
+        </div>
+      </div>
+
+      <div class="a-sec">인식 상태</div>
+      <div class="err-row"><span class="err-key">인식 신뢰도</span><span class="err-val err-ok" id="aConf">94.2 %</span></div>
+    </div>
+
+    <!-- PANEL 3: LOG + SPEC -->
+    <div class="a-panel">
+      <div class="a-sec">시스템 로그</div>
+      <div class="log-box" id="aLog"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const joints = [
+  { label:'J1', angle:34.2,  torq:12.4 },
+  { label:'J2', angle:-67.8, torq:28.1 },
+  { label:'J3', angle:112.3, torq:19.7 },
+  { label:'J4', angle:-23.1, torq:8.3  },
+  { label:'J5', angle:88.5,  torq:15.2 },
+  { label:'J6', angle:15.9,  torq:4.8  },
+];
+
+const tcpAxes = [
+  { axis:'X', val:312.4,  unit:'mm' },
+  { axis:'Y', val:-45.2,  unit:'mm' },
+  { axis:'Z', val:188.7,  unit:'mm' },
+  { axis:'A', val:-12.3,  unit:'°'  },
+  { axis:'B', val:0.8,    unit:'°'  },
+  { axis:'C', val:179.2,  unit:'°'  },
+];
+
+function renderJoints() {
+  document.getElementById('aJoints').innerHTML = joints.map(j => {
+    const pct = Math.min(100, (Math.abs(j.angle) / 180 * 100)).toFixed(0);
+    return `<div class="jrow">
+      <span class="jlabel">${j.label}</span>
+      <div class="jbar-bg"><div class="jbar" style="width:${pct}%"></div></div>
+      <span class="jval">${j.angle.toFixed(1)}°</span>
+      <span class="jtorq">${j.torq.toFixed(1)} Nm</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTcp() {
+  document.getElementById('aTcp').innerHTML = tcpAxes.map(t =>
+    `<div class="tcp-tile">
+      <div class="tcp-axis-lbl">${t.axis}</div>
+      <div class="tcp-num">${t.val.toFixed(1)}<span class="tcp-u">${t.unit}</span></div>
+    </div>`
+  ).join('');
+}
+
+const logLines = [
+  { ts:'14:32:01', lv:'ok',   msg:'D455 카메라 초기화 완료' },
+  { ts:'14:32:03', lv:'info', msg:'DART 플랫폼 연결 성공' },
+  { ts:'14:32:08', lv:'ok',   msg:'YOLO 주유구 탐지: 94.2%' },
+  { ts:'14:32:09', lv:'info', msg:'TCP 목표 좌표 계산 완료' },
+  { ts:'14:32:11', lv:'info', msg:'Joint 이동 명령 전송 (MoveL)' },
+  { ts:'14:32:14', lv:'ok',   msg:'로봇암 접근 궤적 실행 중' },
+  { ts:'14:32:18', lv:'warn', msg:'오차 Z=+3.1mm — 재보정 실행' },
+  { ts:'14:32:20', lv:'ok',   msg:'노즐 삽입 완료 · 주유 시작' },
+];
+
+function renderLog() {
+  const box = document.getElementById('aLog');
+  box.innerHTML = logLines.map(l =>
+    `<div class="log-entry">
+      <span class="log-ts">${l.ts}</span>
+      <span class="log-lv lv-${l.lv}">${l.lv.toUpperCase()}</span>
+      <span class="log-msg">${l.msg}</span>
+    </div>`
+  ).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+let torqueChart;
+function initChart() {
+  const ctx = document.getElementById('aTorqueChart').getContext('2d');
+  torqueChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: joints.map(j => j.label),
+      datasets: [{
+        label: 'Torque (Nm)',
+        data: joints.map(j => parseFloat(j.torq.toFixed(1))),
+        backgroundColor: 'rgba(37,99,235,0.12)',
+        borderColor: '#2563eb',
+        borderWidth: 1.5,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks:{ color:'#94a3b8', font:{size:10} }, grid:{ color:'#f1f5f9' } },
+        y: { ticks:{ color:'#94a3b8', font:{size:10} }, grid:{ color:'#f1f5f9' }, beginAtZero:true, max:35 }
+      }
+    }
+  });
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('aClock').textContent =
+    [now.getHours(), now.getMinutes(), now.getSeconds()]
+      .map(v => String(v).padStart(2,'0')).join(':');
+}
+
+renderJoints(); renderTcp(); renderLog();
+setTimeout(initChart, 120);
+setInterval(updateClock, 1000); updateClock();
+
+const extraMsgs = [
+  ['info','TCP 좌표 업데이트 완료'],
+  ['ok','주유량 +0.15L 누적'],
+  ['ok','DART 수신 신호 정상'],
+  ['ok','비전 재인식 완료 (94.1%)'],
+  ['warn','Z축 미세 편차 감지 +0.2mm'],
+];
+
+let tick = 0;
+setInterval(() => {
+  tick++;
+  joints.forEach(j => {
+    j.angle += (Math.random() - 0.5) * 0.9;
+    j.torq = Math.max(0.5, j.torq + (Math.random() - 0.5) * 1.4);
+  });
+  tcpAxes[0].val += (Math.random() - 0.5) * 0.4;
+  tcpAxes[1].val += (Math.random() - 0.5) * 0.3;
+  tcpAxes[2].val += (Math.random() - 0.5) * 0.2;
+
+  // 인식 신뢰도 시뮬레이션
+  const conf = (93.5 + Math.random() * 2.5).toFixed(1);
+  const confEl = document.getElementById('aConf');
+  confEl.textContent = conf + ' %';
+  confEl.className = 'err-val ' + (parseFloat(conf) >= 90 ? 'err-ok' : 'err-warn');
+
+  renderJoints(); renderTcp();
+
+  if (torqueChart) {
+    torqueChart.data.datasets[0].data = joints.map(j => parseFloat(j.torq.toFixed(1)));
+    torqueChart.update('none');
+  }
+
+  if (tick % 5 === 0) {
+    const [lv, msg] = extraMsgs[Math.floor(Math.random() * extraMsgs.length)];
+    const now = new Date();
+    const ts = [now.getHours(), now.getMinutes(), now.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+    logLines.push({ ts, lv, msg });
+    if (logLines.length > 22) logLines.shift();
+    renderLog();
+  }
+}, 1500);
+</script>
