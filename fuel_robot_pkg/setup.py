@@ -28,7 +28,6 @@ setup(
     entry_points={
         'console_scripts': [
             'ui_gateway_node = fuel_robot_pkg.ui_gateway_node:main',
-            'fuel_port_perception_node = fuel_robot_pkg.fuel_port_perception_node:main',
             'fueling_task_manager_node = fuel_robot_pkg.fueling_task_manager_node:main',
             'doosan_commander_node = fuel_robot_pkg.doosan_commander_node:main',
         ],

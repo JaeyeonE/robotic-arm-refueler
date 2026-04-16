@@ -26,9 +26,6 @@ class FuelingTaskManagerNode(Node):
             String, '/fueling/cmd_done', self.cmd_done_callback, 10
         )
 
-        self.request_pub = self.create_publisher(
-            Bool, '/fueling/request_detection', 10
-        )
         self.target_pose_pub = self.create_publisher(
             Float64MultiArray, '/fueling/fuel_port_pose', 10
         )
@@ -82,12 +79,7 @@ class FuelingTaskManagerNode(Node):
         self.waiting_for_robot = False
 
         self.publish_status('start_received')
-
-        req = Bool()
-        req.data = True
-        self.request_pub.publish(req)
-
-        self.get_logger().info('requested detection')
+        self.get_logger().info('waiting for xyz from gateway')
 
     def xyz_callback(self, msg: Float64MultiArray):
         if not self.busy or not self.waiting_for_xyz:

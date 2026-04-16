@@ -42,12 +42,6 @@ def generate_launch_description():
         ),
         Node(
             package='fuel_robot_pkg',
-            executable='fuel_port_perception_node',
-            name='fuel_port_perception_node',
-            output='screen'
-        ),
-        Node(
-            package='fuel_robot_pkg',
             executable='fueling_task_manager_node',
             name='fueling_task_manager_node',
             output='screen'
