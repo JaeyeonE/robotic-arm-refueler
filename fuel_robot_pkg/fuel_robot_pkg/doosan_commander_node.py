@@ -207,8 +207,8 @@ class DoosanCommanderNode(Node):
     def _call_move_line(self, pose, done_cmd, mode=0, callback=None):
         req = MoveLine.Request()
         req.pos = pose
-        req.vel = [10.0, 10.0]
-        req.acc = [10.0, 10.0]
+        req.vel = [20.0, 20.0]
+        req.acc = [20.0, 20.0]
         req.time = 0.0
         req.radius = 0.0
         req.ref = 0
@@ -337,6 +337,7 @@ class DoosanCommanderNode(Node):
         fuel_insert_pose = pose.copy()
         fuel_insert_pose[1] += 300.0       # Step 15: y + 300mm
 
+
         self.step_queue = deque([
             # ═══ Phase 1: 캡 제거 (Step 1~8) ═══
             {'type': 'gripper', 'stroke': GRIP_OPEN,
@@ -358,6 +359,7 @@ class DoosanCommanderNode(Node):
 
             {'type': 'gripper', 'stroke': GRIP_CAP,
              'desc': '04_grip_gas_cap'},
+            {'type': 'wait', 'seconds': 1.0, 'desc': 'wait01_1'},
             {'type': 'move_j',  'pos': [0.0, 0.0, 0.0, 0.0, 0.0, -90.0], 'mode': 1,
              'desc': '05_unscrew_j6-90'},
             {'type': 'move_l',  'pos': [0.0, 80.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
@@ -367,26 +369,29 @@ class DoosanCommanderNode(Node):
              'desc': '07_x_axis_align'},
             {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -179.99, -11.28],
              'desc': '07-1_place_cap_down'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait02'},
-            {'type': 'gripper', 'stroke': GRIP_OPEN,
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait02'},
+            {'type': 'gripper', 'stroke': GRIP_READY,
              'desc': '08_release_cap'},
+             {'type': 'wait', 'seconds': 1.0, 'desc': 'wait02_1'},
 
             # ═══ Phase 2: 주유건 픽업 (Step 9~13) ═══
             {'type': 'move_l',  'pos': [0.0, 0.0, 300.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '09_up_z+300'},
-
+            {'type': 'gripper', 'stroke': GRIP_OPEN,
+             'desc': '09_1_open_more'},
             {'type': 'move_j',  'pos': [8.17, 40.77, 21.86, 96.84, -96.83, -9.42],
              'desc': '10_gun_waypoint_1'},
             {'type': 'move_j',  'pos': [-38.45, -0.81, 120.63, 57.03, 45.0, 0.0],
              'desc': '10_gun_waypoint_2'},
             {'type': 'move_j',  'pos': [-28.36, 63.83, 54.62, 74.22, 116.64, -32.22],
              'desc': '10_gun_waypoint_3'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait03'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait03'},
             {'type': 'move_l',  'pos': [0.0, 100.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '11_gun_approach_y+100'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait04'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait04'},
             {'type': 'gripper', 'stroke': GRIP_GUN,
              'desc': '12_grip_fuel_gun'},
+             {'type': 'wait', 'seconds': 1.0, 'desc': 'wait04_1'},
             {'type': 'move_l',  'pos': [0.0, -40.0, 70.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '13_lift_gun_y-40_z+70'},
 
@@ -397,7 +402,7 @@ class DoosanCommanderNode(Node):
              'desc': '14_to_port_wp2'},
             {'type': 'move_j',  'pos': [16.53, 37.18, 95.25, 101.33, -102.13, 43.64],
              'desc': '14_to_port_wp3'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait05'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait05'},
 
             {'type': 'move_l',  'pos': fuel_insert_pose,
              'desc': '15_fuel_approach_y+300'},
@@ -414,12 +419,13 @@ class DoosanCommanderNode(Node):
              'desc': '17_remount_wp2'},
             {'type': 'move_j',  'pos': [-20.98, 55.77, 69.95, 75.92, 106.53, -44.1],
              'desc': '17_remount_wp3'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait06'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait06'},
 
             {'type': 'gripper', 'stroke': GRIP_OPEN,
              'desc': '18_release_fuel_gun'},
-            {'type': 'move_l',  'pos': [0.0, -150.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
-             'desc': '19_retreat_y-150'},
+             {'type': 'wait', 'seconds': 1.0, 'desc': 'wait06_1'},
+            {'type': 'move_l',  'pos': [0.0, 0.0, 100.0, 0.0, 0.0, 0.0], 'mode': 1,
+             'desc': '19_retreat_z+100'},
             {'type': 'gripper', 'stroke': GRIP_READY,
              'desc': '02_gripper_ready'},
 
@@ -428,22 +434,26 @@ class DoosanCommanderNode(Node):
              'desc': '20_x_axis_align'},
             {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -170.99, -11.28],
              'desc': '21_pickup_cap'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait07'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait07'},
             {'type': 'gripper', 'stroke': GRIP_CAP,
              'desc': '22_grip_cap'},
+            {'type': 'wait', 'seconds': 1.0, 'desc': 'wait07_1'}, 
 
             {'type': 'move_l',  'pos': [0.0, 0.0, 150.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '23_lift_z+150'},
             {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, 38.56],
              'desc': '24_cap_align'},
+            {'type': 'move_l',  'pos': approach_pose,
+             'desc': '24-1_cap_absolute_align'},
             {'type': 'move_l',  'pos': [0.0, -80.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '25_cap_approach_y-80'},
             {'type': 'move_j',  'pos': [0.0, 0.0, 0.0, 0.0, 0.0, 90.0], 'mode': 1,
              'desc': '26_screw_j6+90'},
-            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait08'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait08'},
 
-            {'type': 'gripper', 'stroke': GRIP_OPEN,
+            {'type': 'gripper', 'stroke': GRIP_READY,
              'desc': '27_release_cap'},
+            {'type': 'wait', 'seconds': 1.0, 'desc': 'wait08_1'}, 
             {'type': 'move_l',  'pos': [0.0, 100.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '28_retreat_y+100'},
 

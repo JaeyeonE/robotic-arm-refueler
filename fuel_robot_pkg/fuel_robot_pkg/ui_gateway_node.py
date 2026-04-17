@@ -83,6 +83,7 @@ class UiGatewayNode(Node):
         self.latest_torques = None
         self.robot_mode = 'IDLE'
         self.dart_connected = False
+        self._last_snapshot_payload = None
 
         # 1Hz로 Flask에 snapshot POST
         self.snapshot_timer = self.create_timer(1.0, self._post_snapshot)
@@ -331,6 +332,12 @@ class UiGatewayNode(Node):
         if self.latest_torques:
             for i in range(6):
                 payload[f'j{i+1}_torque'] = self.latest_torques[i]
+
+        # 이전 POST payload와 동일하면 skip (서비스 응답이 motion 중엔
+        # starve돼서 값이 안 바뀜 → DB에 중복 row 쌓이는 것 방지)
+        if payload == self._last_snapshot_payload:
+            return
+        self._last_snapshot_payload = payload
 
         try:
             http_requests.post(

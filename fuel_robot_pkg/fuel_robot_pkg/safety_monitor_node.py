@@ -1,8 +1,10 @@
+import math
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Float64MultiArray
-from sensor_msgs.msg import JointState
-from dsr_msgs2.srv import GetCurrentPosj, GetCurrentPosx, GetRobotState
+from dsr_msgs2.srv import (
+    GetCurrentPosj, GetCurrentPosx, GetRobotState, GetJointTorque,
+)
 
 
 class SafetyMonitorNode(Node):
@@ -47,11 +49,6 @@ class SafetyMonitorNode(Node):
             Float64MultiArray, '/fueling/current_joint_torque', 10
         )
 
-        # DART 드라이버가 퍼블리시하는 joint_states에서 effort(토크) 수신
-        self.joint_states_sub = self.create_subscription(
-            JointState, 'joint_states', self._joint_states_cb, 10
-        )
-
         # 공식 서비스
         self.get_posj_cli = self.create_client(
             GetCurrentPosj, 'aux_control/get_current_posj'
@@ -61,6 +58,9 @@ class SafetyMonitorNode(Node):
         )
         self.get_robot_state_cli = self.create_client(
             GetRobotState, 'system/get_robot_state'
+        )
+        self.get_joint_torque_cli = self.create_client(
+            GetJointTorque, 'aux_control/get_joint_torque'
         )
 
         self.wait_for_services()
@@ -77,6 +77,8 @@ class SafetyMonitorNode(Node):
             self.get_logger().info('waiting for aux_control/get_current_posx...')
         while not self.get_robot_state_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('waiting for system/get_robot_state...')
+        while not self.get_joint_torque_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('waiting for aux_control/get_joint_torque...')
 
     def publish_status(self, text: str):
         msg = String()
@@ -117,14 +119,27 @@ class SafetyMonitorNode(Node):
         posx_future = self.get_posx_cli.call_async(posx_req)
         posx_future.add_done_callback(self._posx_cb)
 
-    def _joint_states_cb(self, msg: JointState):
-        if not msg.effort or len(msg.effort) < 6:
-            return
-        self.current_torque = [float(v) for v in msg.effort[:6]]
+        # 4) joint torque 요청
+        torque_req = GetJointTorque.Request()
+        torque_future = self.get_joint_torque_cli.call_async(torque_req)
+        torque_future.add_done_callback(self._torque_cb)
 
-        out = Float64MultiArray()
-        out.data = self.current_torque
-        self.current_torque_pub.publish(out)
+    def _torque_cb(self, future):
+        try:
+            resp = future.result()
+            if not resp.success or len(resp.jts) < 6:
+                return
+            torque = [float(v) for v in resp.jts[:6]]
+            # NaN 가드: 값 하나라도 NaN이면 발행 skip
+            if any(math.isnan(v) for v in torque):
+                return
+            self.current_torque = torque
+
+            msg = Float64MultiArray()
+            msg.data = torque
+            self.current_torque_pub.publish(msg)
+        except Exception as e:
+            self.get_logger().error(f'get_joint_torque failed: {e}')
 
     def _robot_state_cb(self, future):
         try:
