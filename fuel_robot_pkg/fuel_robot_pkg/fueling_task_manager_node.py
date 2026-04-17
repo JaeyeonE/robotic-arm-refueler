@@ -16,6 +16,21 @@ class FuelingTaskManagerNode(Node):
         self.fixed_ry = self.get_parameter('fixed_ry').value
         self.fixed_rz = self.get_parameter('fixed_rz').value
 
+        # 안전구역
+        self.declare_parameter('min_x', 360.0)
+        self.declare_parameter('max_x', 600.0)
+        self.declare_parameter('min_y', -525.0)
+        self.declare_parameter('max_y', -220.0)
+        self.declare_parameter('min_z', 160.0)
+        self.declare_parameter('max_z', 370.0)
+
+        self.min_x = self.get_parameter('min_x').value
+        self.max_x = self.get_parameter('max_x').value
+        self.min_y = self.get_parameter('min_y').value
+        self.max_y = self.get_parameter('max_y').value
+        self.min_z = self.get_parameter('min_z').value
+        self.max_z = self.get_parameter('max_z').value
+
         self.start_sub = self.create_subscription(
             Bool, '/fueling/start', self.start_callback, 10
         )
@@ -68,6 +83,14 @@ class FuelingTaskManagerNode(Node):
             self.move_timer.cancel()
             self.move_timer = None
 
+    # 안전구역 검사 함수
+    def is_in_safe_zone(self, x: float, y: float, z: float) -> bool:
+        return (
+            self.min_x <= x <= self.max_x and
+            self.min_y <= y <= self.max_y and
+            self.min_z <= z <= self.max_z
+        )
+
     def start_callback(self, msg: Bool):
         if not msg.data:
             return
@@ -100,6 +123,15 @@ class FuelingTaskManagerNode(Node):
         self.get_logger().info(
             f'detection result -> x={x:.1f}, y={y:.1f}, z={z:.1f}'
         )
+        # 안전구역 검사
+        if not self.is_in_safe_zone(x, y, z):
+            self.get_logger().error(
+                f'out of safe zone: x={x:.1f}, y={y:.1f}, z={z:.1f}'
+            )
+            self.publish_status('target_out_of_safe_zone')
+            self.publish_done(False)
+            self.reset_state()
+            return
 
         target_msg = Float64MultiArray()
         target_msg.data = [x, y, z, self.fixed_rx, self.fixed_ry, self.fixed_rz]
