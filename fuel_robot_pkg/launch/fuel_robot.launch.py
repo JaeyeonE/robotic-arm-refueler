@@ -53,4 +53,10 @@ def generate_launch_description():
             namespace='dsr01',
             output='screen'
         ),
+        Node(
+            package='fuel_robot_pkg',
+            executable='safety_monitor_node',
+            name='safety_monitor_node',
+            output='screen'
+        ),
     ])

@@ -30,6 +30,7 @@ setup(
             'ui_gateway_node = fuel_robot_pkg.ui_gateway_node:main',
             'fueling_task_manager_node = fuel_robot_pkg.fueling_task_manager_node:main',
             'doosan_commander_node = fuel_robot_pkg.doosan_commander_node:main',
+            'safety_monitor_node = fuel_robot_pkg.safety_monitor_node:main',
         ],
     },
 )
