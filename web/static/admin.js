@@ -124,14 +124,19 @@ async function loadStatus() {
 }
 
 // ── 관절 상태 (1.5초) ──
+function fmt(v, digits = 1) {
+    return (v === null || v === undefined) ? '--' : Number(v).toFixed(digits);
+}
+
 function renderJoints(joints) {
     document.getElementById('aJoints').innerHTML = joints.map(j => {
-        const pct = Math.min(100, (Math.abs(j.angle) / 180 * 100)).toFixed(0);
+        const angle = (j.angle === null || j.angle === undefined) ? 0 : j.angle;
+        const pct = Math.min(100, (Math.abs(angle) / 180 * 100)).toFixed(0);
         return `<div class="jrow">
             <span class="jlabel">${j.label}</span>
             <div class="jbar-bg"><div class="jbar" style="width:${pct}%"></div></div>
-            <span class="jval">${j.angle.toFixed(1)}°</span>
-            <span class="jtorq">${j.torque.toFixed(1)} Nm</span>
+            <span class="jval">${fmt(j.angle)}°</span>
+            <span class="jtorq">${fmt(j.torque)} Nm</span>
         </div>`;
     }).join('');
 }
@@ -148,7 +153,7 @@ function renderTcp(tcp) {
     document.getElementById('aTcp').innerHTML = axes.map(t =>
         `<div class="tcp-tile">
             <div class="tcp-axis-lbl">${t.axis}</div>
-            <div class="tcp-num">${t.val.toFixed(1)}<span class="tcp-u">${t.unit}</span></div>
+            <div class="tcp-num">${fmt(t.val)}<span class="tcp-u">${t.unit}</span></div>
         </div>`
     ).join('');
 }
@@ -193,7 +198,9 @@ async function loadRobot() {
         if (jData.joints && jData.joints.length > 0) {
             renderJoints(jData.joints);
             if (torqueChart) {
-                torqueChart.data.datasets[0].data = jData.joints.map(j => j.torque);
+                torqueChart.data.datasets[0].data = jData.joints.map(j =>
+                    (j.torque === null || j.torque === undefined) ? 0 : j.torque
+                );
                 torqueChart.update('none');
             }
         }

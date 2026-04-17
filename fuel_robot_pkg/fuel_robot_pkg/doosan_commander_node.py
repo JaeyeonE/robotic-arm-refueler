@@ -13,7 +13,7 @@ from fuel_robot_pkg.gripper_drl_controller import DRL_BASE_CODE
 GRIP_OPEN = 0
 GRIP_CAP = 800
 GRIP_GUN = 700
-
+GRIP_READY = 350
 
 class DoosanCommanderNode(Node):
     def __init__(self):
@@ -26,6 +26,7 @@ class DoosanCommanderNode(Node):
         self.total_steps = 0
         self.completed_steps = 0
         self.is_running = False
+        self._wait_timer = None
 
         # ── Subscriptions ──
         self.cmd_sub = self.create_subscription(
@@ -124,12 +125,24 @@ class DoosanCommanderNode(Node):
         self.get_logger().warn('E-STOP: clearing sequence and stopping')
         self.step_queue.clear()
         self.is_running = False
+        self._cancel_wait_timer()
 
         req = MoveStop.Request()
         req.stop_mode = 0  # DR_QSTOP_STO
         future = self.move_stop_cli.call_async(req)
         future.add_done_callback(self._estop_done_cb)
         self.publish_status('estop_executed')
+
+    def _cancel_wait_timer(self):
+        if self._wait_timer is None:
+            return
+        try:
+            self._wait_timer.cancel()
+            self.destroy_timer(self._wait_timer)
+        except Exception as e:
+            self.get_logger().warn(f'wait timer cancel failed: {e}')
+        finally:
+            self._wait_timer = None
 
     def _estop_done_cb(self, future):
         try:
@@ -214,14 +227,40 @@ class DoosanCommanderNode(Node):
         future = self.drl_cli.call_async(req)
         future.add_done_callback(partial(self._step_done_cb, done_cmd=done_cmd))
 
+    def _call_wait(self, seconds, done_cmd):
+        """지정된 시간(초) 동안 대기하는 타이머를 생성합니다."""
+        self.get_logger().info(f'[SEQ] Waiting for {seconds}s... ({done_cmd})')
+        self._cancel_wait_timer()
+        self._wait_timer = self.create_timer(
+            float(seconds),
+            partial(self._wait_timer_cb, done_cmd=done_cmd)
+        )
+
+    def _wait_timer_cb(self, done_cmd):
+        """타이머 알람이 울리면 실행되는 함수입니다."""
+        self._cancel_wait_timer()
+        # E-STOP이 wait 중에 들어왔을 경우 시퀀스 재개 차단
+        if not self.is_running:
+            self.get_logger().warn(f'[SEQ] {done_cmd} wait timer fired after abort — ignored')
+            return
+        self._step_done_cb(future=None, done_cmd=done_cmd)
+
     # ──────────────────────────────────────
     #  시퀀스 실행 엔진
     # ──────────────────────────────────────
     def _step_done_cb(self, future, done_cmd='step'):
         """시퀀스 스텝 완료 콜백 → 다음 스텝 실행"""
+        # E-STOP이 이미 시퀀스를 중단시켰으면 콜백 무시
+        if not self.is_running:
+            self.get_logger().warn(f'[SEQ] {done_cmd} callback after abort — ignored')
+            return
         try:
-            resp = future.result()
-            ok = resp.success if resp else False
+            if future is not None:
+                resp = future.result()
+                ok = resp.success if resp else False
+            else:
+                ok = True
+
             self.get_logger().info(f'[SEQ] {done_cmd} done, success={ok}')
 
             if not ok:
@@ -268,6 +307,8 @@ class DoosanCommanderNode(Node):
             self._call_move_line(step['pos'], desc, mode=step.get('mode', 0))
         elif stype == 'gripper':
             self._call_gripper(step['stroke'], desc)
+        elif stype == 'wait':
+            self._call_wait(step['seconds'], desc)
         else:
             self.get_logger().error(f'Unknown step type: {stype}')
             self._run_next_step()
@@ -304,13 +345,16 @@ class DoosanCommanderNode(Node):
              'desc': '01_home_position'},
             {'type': 'move_j',  'pos': [16.73, 33.71, 38.04, 96.83, -85.52, -9.42],
              'desc': '01-1_avoid_waypoint_1'},
-            {'type': 'move_j',  'pos': [-0.95, 42.7, 40.23, 90.95, -94.75, -8.06],
+            {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, 38.56],
              'desc': '01-1_avoid_waypoint_2'},
+            {'type': 'gripper', 'stroke': GRIP_READY,
+             'desc': '01_gripper_ready'},
 
             {'type': 'move_l',  'pos': approach_pose,
              'desc': '02_approach_fuel_port_y+80'},
             {'type': 'move_l',  'pos': [0.0, -80.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '03_insert_y-80'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait01'},
 
             {'type': 'gripper', 'stroke': GRIP_CAP,
              'desc': '04_grip_gas_cap'},
@@ -321,8 +365,9 @@ class DoosanCommanderNode(Node):
 
             {'type': 'move_j',  'pos': [-11.28, 29.99, 58.06, 180.0, -91.94, -11.29],
              'desc': '07_x_axis_align'},
-            {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -170.99, -11.28],
+            {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -179.99, -11.28],
              'desc': '07-1_place_cap_down'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait02'},
             {'type': 'gripper', 'stroke': GRIP_OPEN,
              'desc': '08_release_cap'},
 
@@ -336,9 +381,10 @@ class DoosanCommanderNode(Node):
              'desc': '10_gun_waypoint_2'},
             {'type': 'move_j',  'pos': [-28.36, 63.83, 54.62, 74.22, 116.64, -32.22],
              'desc': '10_gun_waypoint_3'},
-
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait03'},
             {'type': 'move_l',  'pos': [0.0, 100.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '11_gun_approach_y+100'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait04'},
             {'type': 'gripper', 'stroke': GRIP_GUN,
              'desc': '12_grip_fuel_gun'},
             {'type': 'move_l',  'pos': [0.0, -40.0, 70.0, 0.0, 0.0, 0.0], 'mode': 1,
@@ -349,10 +395,9 @@ class DoosanCommanderNode(Node):
              'desc': '14_to_port_wp1'},
             {'type': 'move_j',  'pos': [52.38, 10.46, 77.5, 100.99, -64.29, -9.6],
              'desc': '14_to_port_wp2'},
-            {'type': 'move_j',  'pos': [24.56, 41.13, 42.85, 88.27, -120.1, -7.16],
+            {'type': 'move_j',  'pos': [16.53, 37.18, 95.25, 101.33, -102.13, 43.64],
              'desc': '14_to_port_wp3'},
-            {'type': 'move_j',  'pos': [-0.95, 42.7, 40.23, 90.95, -94.75, -8.06],
-             'desc': '14_to_port_wp4'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait05'},
 
             {'type': 'move_l',  'pos': fuel_insert_pose,
              'desc': '15_fuel_approach_y+300'},
@@ -369,28 +414,33 @@ class DoosanCommanderNode(Node):
              'desc': '17_remount_wp2'},
             {'type': 'move_j',  'pos': [-20.98, 55.77, 69.95, 75.92, 106.53, -44.1],
              'desc': '17_remount_wp3'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait06'},
 
             {'type': 'gripper', 'stroke': GRIP_OPEN,
              'desc': '18_release_fuel_gun'},
             {'type': 'move_l',  'pos': [0.0, -150.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '19_retreat_y-150'},
+            {'type': 'gripper', 'stroke': GRIP_READY,
+             'desc': '02_gripper_ready'},
 
             # ═══ Phase 5: 캡 재장착 (Step 20~28) ═══
             {'type': 'move_j',  'pos': [-11.28, 29.99, 58.06, 180.0, -91.94, -11.29],
              'desc': '20_x_axis_align'},
             {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -170.99, -11.28],
              'desc': '21_pickup_cap'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait07'},
             {'type': 'gripper', 'stroke': GRIP_CAP,
              'desc': '22_grip_cap'},
 
             {'type': 'move_l',  'pos': [0.0, 0.0, 150.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '23_lift_z+150'},
-            {'type': 'move_j',  'pos': [-0.95, 42.7, 40.23, 90.95, -94.75, -98.06],
+            {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, 38.56],
              'desc': '24_cap_align'},
             {'type': 'move_l',  'pos': [0.0, -80.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '25_cap_approach_y-80'},
             {'type': 'move_j',  'pos': [0.0, 0.0, 0.0, 0.0, 0.0, 90.0], 'mode': 1,
              'desc': '26_screw_j6+90'},
+            {'type': 'wait', 'seconds': 0.5, 'desc': 'wait08'},
 
             {'type': 'gripper', 'stroke': GRIP_OPEN,
              'desc': '27_release_cap'},

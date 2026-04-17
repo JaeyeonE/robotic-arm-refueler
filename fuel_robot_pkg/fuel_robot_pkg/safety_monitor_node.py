@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Float64MultiArray
+from sensor_msgs.msg import JointState
 from dsr_msgs2.srv import GetCurrentPosj, GetCurrentPosx, GetRobotState
 
 
@@ -26,6 +27,7 @@ class SafetyMonitorNode(Node):
         self.estop_sent = False
         self.current_tcp = None
         self.current_joint = None
+        self.current_torque = None
         self.robot_state = None
         self.waiting_response = False
 
@@ -40,6 +42,14 @@ class SafetyMonitorNode(Node):
         )
         self.current_joint_pub = self.create_publisher(
             Float64MultiArray, '/fueling/current_joint_pos', 10
+        )
+        self.current_torque_pub = self.create_publisher(
+            Float64MultiArray, '/fueling/current_joint_torque', 10
+        )
+
+        # DART 드라이버가 퍼블리시하는 joint_states에서 effort(토크) 수신
+        self.joint_states_sub = self.create_subscription(
+            JointState, 'joint_states', self._joint_states_cb, 10
         )
 
         # 공식 서비스
@@ -106,6 +116,15 @@ class SafetyMonitorNode(Node):
         posx_req.ref = 0   # DR_BASE
         posx_future = self.get_posx_cli.call_async(posx_req)
         posx_future.add_done_callback(self._posx_cb)
+
+    def _joint_states_cb(self, msg: JointState):
+        if not msg.effort or len(msg.effort) < 6:
+            return
+        self.current_torque = [float(v) for v in msg.effort[:6]]
+
+        out = Float64MultiArray()
+        out.data = self.current_torque
+        self.current_torque_pub.publish(out)
 
     def _robot_state_cb(self, future):
         try:

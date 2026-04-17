@@ -48,6 +48,9 @@ class UiGatewayNode(Node):
         self.robot_cmd_pub = self.create_publisher(
             String, '/fueling/robot_cmd', 10
         )
+        self.status_pub = self.create_publisher(
+            String, '/fueling/status', 10
+        )
 
         self.status_sub = self.create_subscription(
             String, '/fueling/status', self.status_callback, 10
@@ -56,9 +59,33 @@ class UiGatewayNode(Node):
             Bool, '/fueling/done', self.done_callback, 10
         )
 
+        # safety_monitor_node가 퍼블리시하는 로봇 상태 구독
+        self.tcp_sub = self.create_subscription(
+            Float64MultiArray, '/fueling/current_tcp_pose',
+            self._tcp_callback, 10,
+        )
+        self.joint_pos_sub = self.create_subscription(
+            Float64MultiArray, '/fueling/current_joint_pos',
+            self._joint_pos_callback, 10,
+        )
+        self.joint_torque_sub = self.create_subscription(
+            Float64MultiArray, '/fueling/current_joint_torque',
+            self._joint_torque_callback, 10,
+        )
+
         self.latest_status = ''
         self.latest_done = None
         self.current_task_id = None
+
+        # 최신 로봇 상태 버퍼
+        self.latest_tcp = None
+        self.latest_joints = None
+        self.latest_torques = None
+        self.robot_mode = 'IDLE'
+        self.dart_connected = False
+
+        # 1Hz로 Flask에 snapshot POST
+        self.snapshot_timer = self.create_timer(1.0, self._post_snapshot)
 
         self._start_http_server()
         self.get_logger().info(
@@ -193,12 +220,21 @@ class UiGatewayNode(Node):
     def publish_status(self, text: str):
         msg = String()
         msg.data = text
-        self.status_pub = self.create_publisher(String, '/fueling/status', 10)
         self.status_pub.publish(msg)
 
     def status_callback(self, msg: String):
         self.latest_status = msg.data
         self.get_logger().info(f'[UI STATUS] {msg.data}')
+
+        # robot_mode 추적 (snapshot 전달용)
+        if msg.data in ('start_received', 'fueling_started', 'robot_move_command_sent'):
+            self.robot_mode = 'FUELING'
+        elif msg.data in ('fueling_complete', 'go_home_success', 'move_completed'):
+            self.robot_mode = 'IDLE'
+        elif msg.data == 'estop_from_web' or msg.data.startswith('safety_limit_exceeded'):
+            self.robot_mode = 'ESTOP'
+        elif msg.data == 'fueling_error' or msg.data.startswith('fueling_aborted'):
+            self.robot_mode = 'ERROR'
 
         # fueling_progress:N/T 포맷 파싱
         if msg.data.startswith('fueling_progress:'):
@@ -254,6 +290,55 @@ class UiGatewayNode(Node):
             self._post_log('ERROR', '로봇 작업 실패')
 
         self.current_task_id = None
+
+    # ──────────────────────────────────────
+    #  로봇 상태 버퍼 (safety_monitor → Flask)
+    # ──────────────────────────────────────
+    def _tcp_callback(self, msg: Float64MultiArray):
+        if len(msg.data) >= 6:
+            self.latest_tcp = list(msg.data[:6])
+            self.dart_connected = True
+
+    def _joint_pos_callback(self, msg: Float64MultiArray):
+        if len(msg.data) >= 6:
+            self.latest_joints = list(msg.data[:6])
+            self.dart_connected = True
+
+    def _joint_torque_callback(self, msg: Float64MultiArray):
+        if len(msg.data) >= 6:
+            self.latest_torques = list(msg.data[:6])
+
+    def _post_snapshot(self):
+        # 최소 TCP 또는 joint 중 하나는 있어야 전송
+        if self.latest_tcp is None and self.latest_joints is None:
+            return
+
+        payload = {
+            'station_id': self.station_id,
+            'task_id': self.current_task_id,
+            'robot_mode': self.robot_mode,
+            'dart_connected': 1 if self.dart_connected else 0,
+        }
+        if self.latest_tcp:
+            payload.update({
+                'tcp_x': self.latest_tcp[0], 'tcp_y': self.latest_tcp[1],
+                'tcp_z': self.latest_tcp[2], 'tcp_a': self.latest_tcp[3],
+                'tcp_b': self.latest_tcp[4], 'tcp_c': self.latest_tcp[5],
+            })
+        if self.latest_joints:
+            for i in range(6):
+                payload[f'j{i+1}_angle'] = self.latest_joints[i]
+        if self.latest_torques:
+            for i in range(6):
+                payload[f'j{i+1}_torque'] = self.latest_torques[i]
+
+        try:
+            http_requests.post(
+                f'{self.flask_url}/api/robot/snapshot',
+                json=payload, timeout=0.5,
+            )
+        except Exception as e:
+            self.get_logger().debug(f'snapshot POST failed: {e}')
 
 
 def main(args=None):
