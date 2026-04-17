@@ -291,6 +291,17 @@
 }
 
 .btn-start:hover { background: #374151; }
+.btn-start:disabled,
+.btn-start.btn-start--disabled {
+  background: #9ca3af;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+  color: #f3f4f6;
+}
+.btn-start:disabled:hover,
+.btn-start.btn-start--disabled:hover {
+  background: #9ca3af;
+}
 
 .btn-estop {
   width: 100%;
@@ -428,6 +439,24 @@
 
 .metric-tile.highlight { background: #eff6ff; border-color: #bfdbfe; }
 .metric-tile.highlight .metric-tile-val { color: #2563eb; }
+
+.fuel-status-box {
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.fuel-status-box .metric-tile-label {
+  margin-bottom: 6px;
+  color: #9ca3af;
+}
+.fuel-status-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
 
 .syslog-box {
   background: #f8fafc;
@@ -571,6 +600,11 @@
         </div>
       </div>
 
+      <div class="fuel-status-box">
+        <div class="metric-tile-label">감지된 연료</div>
+        <div class="metric-tile-val fuel-status-val" id="kFuelType">미인식</div>
+      </div>
+
       <div class="sec-title">시스템 로그</div>
       <div class="syslog-box">
         <div class="syslog-line"><span class="tag tag-ok">OK</span><span>비전 모듈 주유구 인식 완료 (94.2%)</span></div>
@@ -611,6 +645,29 @@ function doEstop() {
   b.style.background = '#7f1d1d';
   document.querySelectorAll('.step-item').forEach(s => s.style.opacity = '0.3');
 }
+
+function updateStartButtonState() {
+  const btn = document.querySelector('.btn-start');
+  const fuelEl = document.getElementById('kFuelType');
+  if (!btn || !fuelEl) return;
+
+  const fuelType = fuelEl.textContent.trim();
+  const disabled = fuelType === '' || fuelType === '미인식';
+  btn.disabled = disabled;
+  btn.classList.toggle('btn-start--disabled', disabled);
+  btn.textContent = disabled ? '주유 시작 → (연료 미인식)' : '주유 시작 →';
+}
+
+function setFuelType(fuelType) {
+  const el = document.getElementById('kFuelType');
+  if (!el) return;
+  el.textContent = fuelType ? fuelType : '미인식';
+  updateStartButtonState();
+}
+
+(function initKiosk() {
+  updateStartButtonState();
+})();
 
 let secs = 47, liters = 12.4;
 setInterval(() => {

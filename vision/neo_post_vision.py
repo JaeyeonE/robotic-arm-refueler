@@ -8,8 +8,8 @@ from datetime import datetime
 import math
 from ultralytics import YOLO
 
-# 모델 다른 것으로 수정 필요
-model = YOLO('refueling.pt')
+# 모델 다른 것으로 수정 완료 
+model = YOLO('yolov12_0415.pt')
 
 # ─── Flask API 설정 ───
 API_URL = "http://localhost:5000"
@@ -199,6 +199,74 @@ def get_mask_3d_center(mask, x_offset, y_offset, depth_frame):
     return center_robot, center_pixel, len(robot_points)
 
 
+def detect_fuel_type_by_color(color_image):
+    """
+    전체 화면에서 빨간색/노란색 존재 여부를 보고
+    경유/휘발유 판정
+    반환:
+        fuel_type: "diesel" | "gasoline" | None
+        debug_info: dict
+        mask_yellow, mask_red: binary masks
+    """
+    hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
+
+    # 노란색 범위
+    lower_yellow = np.array([20, 80, 80])
+    upper_yellow = np.array([35, 255, 255])
+
+    # 빨간색 범위 (HSV 특성상 2개 구간 필요)
+    lower_red1 = np.array([0, 80, 80])
+    upper_red1 = np.array([10, 255, 255])
+    lower_red2 = np.array([170, 80, 80])
+    upper_red2 = np.array([180, 255, 255])
+
+    mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+    mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    mask_red = cv2.bitwise_or(mask_red1, mask_red2)
+
+    kernel = np.ones((3, 3), np.uint8)
+    mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_OPEN, kernel)
+    mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_CLOSE, kernel)
+
+    mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN, kernel)
+    mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE, kernel)
+
+    yellow_pixels = cv2.countNonZero(mask_yellow)
+    red_pixels = cv2.countNonZero(mask_red)
+
+    def max_contour_area(mask):
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return 0
+        return max(cv2.contourArea(cnt) for cnt in contours)
+
+    yellow_max_area = max_contour_area(mask_yellow)
+    red_max_area = max_contour_area(mask_red)
+
+    fuel_type = None
+    yellow_detected = yellow_pixels > 80 or yellow_max_area > 50
+    red_detected = red_pixels > 80 or red_max_area > 50
+
+    if yellow_detected and not red_detected:
+        fuel_type = "diesel"
+    elif red_detected and not yellow_detected:
+        fuel_type = "gasoline"
+    elif yellow_detected and red_detected:
+        yellow_score = yellow_pixels + yellow_max_area
+        red_score = red_pixels + red_max_area
+        fuel_type = "diesel" if yellow_score >= red_score else "gasoline"
+
+    debug_info = {
+        "yellow_pixels": yellow_pixels,
+        "red_pixels": red_pixels,
+        "yellow_max_area": yellow_max_area,
+        "red_max_area": red_max_area
+    }
+
+    return fuel_type, debug_info, mask_yellow, mask_red
+
+
 last_print = time.time()
 
 try:
@@ -212,6 +280,24 @@ try:
 
         color_image = np.asanyarray(color_frame.get_data())
         display_image = color_image.copy()
+
+        fuel_type, fuel_debug, mask_yellow, mask_red = detect_fuel_type_by_color(color_image)
+        if fuel_type is not None:
+            cv2.putText(display_image,
+                        f"fuel={fuel_type}",
+                        (20, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (255, 0, 255),
+                        2)
+            cv2.putText(display_image,
+                        f"Ypix={fuel_debug['yellow_pixels']} Rpix={fuel_debug['red_pixels']}",
+                        (20, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 0, 255),
+                        2)
+
         results = model(color_image, verbose=False)
 
         now = time.time()
@@ -350,6 +436,7 @@ try:
                         'robot_y':    obj['robot_xyz'][1],
                         'robot_z':    obj['robot_xyz'][2],
                         'handle_angle': obj['handle_angle'],
+                        'fuel_type': fuel_type,
                     }
                     # face 3D 중심이 있으면 추가
                     if obj['face_robot_xyz'] is not None:

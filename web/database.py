@@ -106,6 +106,7 @@ def init_db():
             depth       REAL,
             robot_x REAL, robot_y REAL, robot_z REAL,
             handle_angle REAL,
+            fuel_type   TEXT,
             image_path  TEXT,
             timestamp   DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -357,8 +358,8 @@ def insert_detection(data):
            (station_id, task_id, label, confidence,
             bbox_x1, bbox_y1, bbox_x2, bbox_y2,
             center_u, center_v, depth,
-            robot_x, robot_y, robot_z, handle_angle, image_path)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            robot_x, robot_y, robot_z, handle_angle, fuel_type, image_path)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (
             data["station_id"],
             data.get("task_id"),
@@ -369,6 +370,7 @@ def insert_detection(data):
             data.get("depth"),
             data.get("robot_x"), data.get("robot_y"), data.get("robot_z"),
             data.get("handle_angle"),
+            data.get("fuel_type"),
             data.get("image_path"),
         ),
     )
