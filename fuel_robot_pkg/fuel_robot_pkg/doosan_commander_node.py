@@ -94,6 +94,15 @@ class DoosanCommanderNode(Node):
             f'updated target pose -> x={x:.1f}, y={y:.1f}, z={z:.1f}, '
             f'rx={rx:.1f}, ry={ry:.1f}, rz={rz:.1f}'
         )
+    
+    def angle_callback(self, msg: Float64MultiArray):
+        if len(msg.data) != 1:
+            self.get_logger().warn('fuel_port_angle must contain exactly 1 value')
+            return
+        self.latest_fuel_port_angle = msg.data
+        self.get_logger().info(
+            f'updated target angle -> angle={self.latest_fuel_port_angle:.1f}'
+        )
 
     def cmd_callback(self, msg: String):
         cmd = msg.data
@@ -326,7 +335,7 @@ class DoosanCommanderNode(Node):
             return
 
         self.is_running = True
-        self.completed_steps = 0
+        self.completed_steps = 0.0
 
         pose = self.latest_fuel_port_pose  # [x, y, z, rx, ry, rz]
 
@@ -337,6 +346,12 @@ class DoosanCommanderNode(Node):
         fuel_insert_pose = pose.copy()
         fuel_insert_pose[1] += 300.0       # Step 15: y + 300mm
 
+        final_angle = 0
+
+        if self.latest_fuel_port_angle >= 0:
+            final_angle = self.latest_fuel_port_angle - 51.44
+        else:
+            final_angle = self.latest_fuel_port_angle + 128.56
 
         self.step_queue = deque([
             # ═══ Phase 1: 캡 제거 (Step 1~8) ═══
@@ -346,7 +361,7 @@ class DoosanCommanderNode(Node):
              'desc': '01_home_position'},
             {'type': 'move_j',  'pos': [16.73, 33.71, 38.04, 96.83, -85.52, -9.42],
              'desc': '01-1_avoid_waypoint_1'},
-            {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, 38.56],
+            {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, final_angle],
              'desc': '01-1_avoid_waypoint_2'},
             {'type': 'gripper', 'stroke': GRIP_READY,
              'desc': '01_gripper_ready'},
@@ -367,7 +382,7 @@ class DoosanCommanderNode(Node):
 
             {'type': 'move_j',  'pos': [-11.28, 29.99, 58.06, 180.0, -91.94, -11.29],
              'desc': '07_x_axis_align'},
-            {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -179.99, -11.28],
+            {'type': 'move_l',  'pos': [0.0, 0.0, -217.78, 0.0, 0.0, 0.0], 'mode' : 1,
              'desc': '07-1_place_cap_down'},
             {'type': 'wait', 'seconds': 2.0, 'desc': 'wait02'},
             {'type': 'gripper', 'stroke': GRIP_READY,
@@ -390,7 +405,7 @@ class DoosanCommanderNode(Node):
             {'type': 'wait', 'seconds': 1.0, 'desc': 'wait04'},
             {'type': 'gripper', 'stroke': GRIP_GUN,
              'desc': '12_grip_fuel_gun'},
-             {'type': 'wait', 'seconds': 2.0, 'desc': 'wait04_1'},
+            {'type': 'wait', 'seconds': 2.0, 'desc': 'wait04_1'},
             {'type': 'move_l',  'pos': [0.0, -40.0, 70.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '13_lift_gun_y-40_z+70'},
 
@@ -432,8 +447,8 @@ class DoosanCommanderNode(Node):
             # ═══ Phase 5: 캡 재장착 (Step 20~28) ═══
             {'type': 'move_j',  'pos': [-11.28, 29.99, 58.06, 180.0, -91.94, -11.29],
              'desc': '20_x_axis_align'},
-            {'type': 'move_l',  'pos': [548.45, -109.39, 137.83, 168.73, -170.99, -11.28],
-             'desc': '21_pickup_cap'},
+            {'type': 'move_l',  'pos': [0.0, 0.0, -217.78, 0.0, 0.0, 0.0], 'mode' : 1,
+             'desc': '07-3_place_cap_down'},
             {'type': 'wait', 'seconds': 1.0, 'desc': 'wait07'},
             {'type': 'gripper', 'stroke': GRIP_CAP,
              'desc': '22_grip_cap'},
