@@ -20,6 +20,7 @@ class DoosanCommanderNode(Node):
         super().__init__('doosan_commander_node', namespace='dsr01')
 
         self.latest_fuel_port_pose = None
+        self.latest_fuel_port_angle = None
 
         # ── 시퀀스 FSM 상태 ──
         self.step_queue = deque()
@@ -34,6 +35,9 @@ class DoosanCommanderNode(Node):
         )
         self.pose_sub = self.create_subscription(
             Float64MultiArray, '/fueling/fuel_port_pose', self.pose_callback, 10
+        )
+        self.angle_sub = self.create_subscription(
+            Float64MultiArray, '/fueling/fuel_port_angle', self.angle_callback, 10
         )
 
         # ── Publishers ──
@@ -99,7 +103,7 @@ class DoosanCommanderNode(Node):
         if len(msg.data) != 1:
             self.get_logger().warn('fuel_port_angle must contain exactly 1 value')
             return
-        self.latest_fuel_port_angle = msg.data
+        self.latest_fuel_port_angle = float(msg.data[0])
         self.get_logger().info(
             f'updated target angle -> angle={self.latest_fuel_port_angle:.1f}'
         )
@@ -202,8 +206,8 @@ class DoosanCommanderNode(Node):
     def _call_move_joint(self, joints, done_cmd, mode=0, callback=None):
         req = MoveJoint.Request()
         req.pos = joints
-        req.vel = 20.0
-        req.acc = 20.0
+        req.vel = 30.0
+        req.acc = 30.0
         req.time = 0.0
         req.radius = 0.0
         req.mode = mode       # 0=절대, 1=상대
@@ -216,8 +220,8 @@ class DoosanCommanderNode(Node):
     def _call_move_line(self, pose, done_cmd, mode=0, callback=None):
         req = MoveLine.Request()
         req.pos = pose
-        req.vel = [20.0, 20.0]
-        req.acc = [20.0, 20.0]
+        req.vel = [30.0, 30.0]
+        req.acc = [30.0, 30.0]
         req.time = 0.0
         req.radius = 0.0
         req.ref = 0
@@ -335,23 +339,31 @@ class DoosanCommanderNode(Node):
             return
 
         self.is_running = True
-        self.completed_steps = 0.0
+        self.completed_steps = 0
 
         pose = self.latest_fuel_port_pose  # [x, y, z, rx, ry, rz]
 
         # 동적 좌표 계산
         approach_pose = pose.copy()
-        approach_pose[1] += 80.0           # Step 2: y + 80mm
+        approach_pose[0] += 10
+        approach_pose[1] += 85.0           # Step 2: y + 80mm + 5mm
+        approach_pose[2] -= 10
 
         fuel_insert_pose = pose.copy()
         fuel_insert_pose[1] += 300.0       # Step 15: y + 300mm
 
-        final_angle = 0
-
-        if self.latest_fuel_port_angle >= 0:
-            final_angle = self.latest_fuel_port_angle - 51.44
+        # handle_angle이 없으면 기존 하드코딩 기본값(38.56) 유지
+        if self.latest_fuel_port_angle is None:
+            final_angle = 38.56
+            self.get_logger().warn(
+                '[SEQ] handle_angle not received — using default J6=38.56'
+            )
+        elif self.latest_fuel_port_angle >= 0:
+            
+            final_angle = self.latest_fuel_port_angle - 90
         else:
-            final_angle = self.latest_fuel_port_angle + 128.56
+            
+            final_angle = self.latest_fuel_port_angle + 90
 
         self.step_queue = deque([
             # ═══ Phase 1: 캡 제거 (Step 1~8) ═══
@@ -361,13 +373,15 @@ class DoosanCommanderNode(Node):
              'desc': '01_home_position'},
             {'type': 'move_j',  'pos': [16.73, 33.71, 38.04, 96.83, -85.52, -9.42],
              'desc': '01-1_avoid_waypoint_1'},
-            {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, final_angle],
+            {'type': 'move_j',  'pos': [-4.34, 37.27, 91.2, 87.3, -86.61, 38.56],
              'desc': '01-1_avoid_waypoint_2'},
             {'type': 'gripper', 'stroke': GRIP_READY,
              'desc': '01_gripper_ready'},
 
             {'type': 'move_l',  'pos': approach_pose,
              'desc': '02_approach_fuel_port_y+80'},
+            {'type': 'move_j',  'pos': [0.0, 0.0, 0.0, 0.0, 0.0, final_angle], 'mode': 1,
+             'desc': '02-1_rotate_gripper'}, 
             {'type': 'move_l',  'pos': [0.0, -80.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
              'desc': '03_insert_y-80'},
             {'type': 'wait', 'seconds': 0.5, 'desc': 'wait01'},
@@ -420,8 +434,10 @@ class DoosanCommanderNode(Node):
 
             {'type': 'move_l',  'pos': fuel_insert_pose,
              'desc': '15_fuel_approach_y+300'},
+            {'type': 'move_l',  'pos': [0.0, 0.0, -20.0, 0.0, 0.0, 0.0], 'mode': 1,
+             'desc': '15_insert_gun_z-35'},
             {'type': 'move_l',  'pos': [0.0, -150.0, 0.0, 0.0, 0.0, 0.0], 'mode': 1,
-             'desc': '15_insert_gun_y-150'},
+             'desc': '16_insert_gun_y-150'},             
             {'type': 'wait', 'seconds': 4.0, 'desc': 'wait05-1'},
 
             # ═══ Phase 4: 주유 후 주유건 재거치 (Step 16~19) ═══

@@ -45,6 +45,9 @@ class UiGatewayNode(Node):
         self.xyz_pub = self.create_publisher(
             Float64MultiArray, '/fueling/fuel_port_xyz', 10
         )
+        self.angle_pub = self.create_publisher(
+            Float64MultiArray, '/fueling/fuel_port_angle', 10
+        )
         self.robot_cmd_pub = self.create_publisher(
             String, '/fueling/robot_cmd', 10
         )
@@ -178,6 +181,17 @@ class UiGatewayNode(Node):
                 node.get_logger().info(
                     f'published xyz: [{x:.1f}, {y:.1f}, {z:.1f}]'
                 )
+
+                # handle_angle은 None일 수 있음 → None이면 publish 생략
+                # (commander는 latest_fuel_port_angle이 None이면 기본 방향 유지)
+                angle = data.get('handle_angle')
+                if angle is not None:
+                    angle_msg = Float64MultiArray()
+                    angle_msg.data = [float(angle)]
+                    node.angle_pub.publish(angle_msg)
+                    node.get_logger().info(f'published angle: [{float(angle):.1f}]')
+                else:
+                    node.get_logger().info('handle_angle is None → default 방향 유지')
 
                 node.latest_done = None
                 self._respond(200, {'ok': True})

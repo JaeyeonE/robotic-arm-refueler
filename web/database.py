@@ -6,10 +6,11 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "detections_v2.db")
 
 
 def get_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=10000")
     return conn
 
 
@@ -393,6 +394,26 @@ def get_latest_detection(station_id=None):
         ).fetchone()
     conn.close()
     return dict(row) if row else None
+
+
+def get_latest_handle_angle(station_id=None, lookback=50):
+    """최근 lookback 행 중 handle_angle IS NOT NULL 첫 행의 angle 반환. 없으면 None."""
+    conn = get_conn()
+    if station_id:
+        row = conn.execute(
+            """SELECT handle_angle FROM vision_detections
+               WHERE station_id=? AND handle_angle IS NOT NULL
+               ORDER BY id DESC LIMIT 1""",
+            (station_id,),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            """SELECT handle_angle FROM vision_detections
+               WHERE handle_angle IS NOT NULL
+               ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+    conn.close()
+    return row["handle_angle"] if row else None
 
 
 def get_detection_history(station_id=None, task_id=None, limit=100):

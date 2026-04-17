@@ -17,6 +17,7 @@ from database import (
     create_task, update_task, get_current_task, get_task, get_task_history,
     insert_robot_snapshot, get_latest_snapshot,
     insert_detection, get_latest_detection, get_detection_history,
+    get_latest_handle_angle,
     insert_log, get_logs,
 )
 from logger import setup_logger
@@ -172,11 +173,15 @@ def api_register():
     if not all([username, password, name]):
         return jsonify({"error": "username, password, name 필수"}), 400
 
+    import sqlite3
     try:
         uid = create_user(username, password, name, role, phone)
         return jsonify({"ok": True, "user_id": uid}), 201
-    except Exception as e:
+    except sqlite3.IntegrityError:
         return jsonify({"error": "이미 존재하는 사용자명입니다"}), 409
+    except Exception as e:
+        logger.exception("register failed")
+        return jsonify({"error": f"서버 오류: {type(e).__name__}"}), 500
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -420,6 +425,11 @@ def api_task_start():
         return jsonify({"ok": True, "task_id": task_id,
                         "warn": "비전 데이터 없음, 로봇 대기 상태"}), 201
 
+    handle_angle = get_latest_handle_angle(station_id)
+    if handle_angle is None:
+        insert_log("WARN", "최근 handle_angle 없음 — 기본 방향으로 진행",
+                   source="kiosk", station_id=station_id, task_id=task_id)
+
     try:
         http_requests.post(
             f"{ROS2_GATEWAY_URL}/fueling/start",
@@ -427,12 +437,14 @@ def api_task_start():
                 "robot_x": det["robot_x"],
                 "robot_y": det["robot_y"],
                 "robot_z": det["robot_z"],
+                "handle_angle": handle_angle,
                 "task_id": task_id,
             },
             timeout=2.0,
         )
+        angle_txt = f"{handle_angle:.1f}" if handle_angle is not None else "default"
         insert_log("INFO",
-                    f"로봇 제어 요청: xyz=({det['robot_x']:.1f}, {det['robot_y']:.1f}, {det['robot_z']:.1f})",
+                    f"로봇 제어 요청: xyz=({det['robot_x']:.1f}, {det['robot_y']:.1f}, {det['robot_z']:.1f}), angle={angle_txt}",
                     source="control", station_id=station_id, task_id=task_id)
     except Exception as e:
         insert_log("ERROR", f"ROS2 gateway 연결 실패: {e}",
