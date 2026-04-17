@@ -87,6 +87,20 @@ body { background: #e8eaed; }
 .guide-text { font-size: 12px; font-weight: 500; color: #15803d; }
 
 /* FUEL SELECT */
+.fuel-status-box {
+  background: #ffffff; border: 1.5px solid #e5e7eb; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fuel-status-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+  color: #9ca3af; text-transform: uppercase;
+}
+.fuel-status-val {
+  font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 700;
+  color: #1d4ed8;
+}
+.fuel-status-val.unrecognized { color: #9ca3af; }
 .fuel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 14px; }
 .fuel-opt {
   background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 8px;
@@ -220,8 +234,13 @@ body { background: #e8eaed; }
       </div>
 
       <div class="sec-title">주유 정보 입력</div>
+      <div class="fuel-status-box">
+        <div class="fuel-status-label">감지된 연료</div>
+        <div class="fuel-status-val" id="kFuelType">미인식</div>
+      </div>
+
       <div class="fuel-grid" id="kFuelGrid">
-        <div class="fuel-opt active" data-fuel="gasoline" onclick="pickFuel(this)"><span class="fuel-icon">🔴</span>휘발유</div>
+        <div class="fuel-opt" data-fuel="gasoline" onclick="pickFuel(this)"><span class="fuel-icon">🔴</span>휘발유</div>
         <div class="fuel-opt" data-fuel="diesel" onclick="pickFuel(this)"><span class="fuel-icon">🟤</span>경유</div>
         <div class="fuel-opt" data-fuel="lpg" onclick="pickFuel(this)"><span class="fuel-icon">🔵</span>LPG</div>
         <div class="fuel-opt" data-fuel="electric" onclick="pickFuel(this)"><span class="fuel-icon">⚡</span>전기</div>

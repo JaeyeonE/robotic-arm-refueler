@@ -37,7 +37,7 @@ R_cam2robot = np.array([[-1,  0,  0],
 
 t_cam2robot = np.array([400.0, 238.0, 110.0])  # mm
 
-CONF_THRESHOLD = 0.70
+CONF_THRESHOLD = 0.60
 SAVE_DIR = "captures"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
@@ -72,6 +72,52 @@ def pixel_to_robot(u, v, depth_m):
     point_robot = R_cam2robot @ point_cam_mm + t_cam2robot
     return point_robot
 
+
+def detect_fuel_type_by_color(color_image):
+    """HSV 마스킹으로 노란색(diesel) / 빨간색(gasoline) 판별."""
+    hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
+
+    lower_yellow = np.array([20, 80, 80])
+    upper_yellow = np.array([35, 255, 255])
+    lower_red1 = np.array([0, 80, 80])
+    upper_red1 = np.array([10, 255, 255])
+    lower_red2 = np.array([170, 80, 80])
+    upper_red2 = np.array([180, 255, 255])
+
+    mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+    mask_red = cv2.bitwise_or(
+        cv2.inRange(hsv, lower_red1, upper_red1),
+        cv2.inRange(hsv, lower_red2, upper_red2),
+    )
+
+    kernel = np.ones((3, 3), np.uint8)
+    mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_OPEN, kernel)
+    mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_CLOSE, kernel)
+    mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN, kernel)
+    mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE, kernel)
+
+    yellow_pixels = cv2.countNonZero(mask_yellow)
+    red_pixels = cv2.countNonZero(mask_red)
+
+    def max_contour_area(mask):
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        return max((cv2.contourArea(c) for c in contours), default=0)
+
+    yellow_max_area = max_contour_area(mask_yellow)
+    red_max_area = max_contour_area(mask_red)
+
+    yellow_detected = yellow_pixels > 80 or yellow_max_area > 50
+    red_detected = red_pixels > 80 or red_max_area > 50
+
+    if yellow_detected and not red_detected:
+        return 'diesel'
+    if red_detected and not yellow_detected:
+        return 'gasoline'
+    if yellow_detected and red_detected:
+        return 'diesel' if (yellow_pixels + yellow_max_area) >= (red_pixels + red_max_area) else 'gasoline'
+    return None
+
+
 last_print = time.time()
 
 try:
@@ -85,6 +131,9 @@ try:
 
         color_image = np.asanyarray(color_frame.get_data())
         display_image = color_image.copy()
+
+        fuel_type = detect_fuel_type_by_color(color_image)
+
         results = model(color_image, verbose=False)
 
         now = time.time()
@@ -172,6 +221,7 @@ try:
                         'robot_y':    obj['robot_xyz'][1],
                         'robot_z':    obj['robot_xyz'][2],
                         'handle_angle': obj['handle_angle'],
+                        'fuel_type':  fuel_type,
                     }, timeout=0.3)
                 except Exception:
                     pass

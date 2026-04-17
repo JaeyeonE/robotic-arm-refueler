@@ -2,7 +2,7 @@ import sqlite3
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "detections.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "detections_v2.db")
 
 
 def get_conn():

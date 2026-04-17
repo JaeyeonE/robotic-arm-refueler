@@ -2,8 +2,17 @@
 
 const SQ = `station_id=${STATION_ID}`;
 
-let selectedFuel = 'gasoline';
+let selectedFuel = null;         // 기본 선택 없음 — 사용자 수동 선택 또는 비전 감지로 세팅
+let userPickedFuel = false;      // true면 사용자가 수동 선택한 것 — 비전 결과로 덮어쓰지 않음
+let detectedFuel = null;         // 비전이 마지막으로 감지한 연료
 let selectedMode = 'amount';
+
+const FUEL_LABEL = {
+    gasoline: '휘발유',
+    diesel: '경유',
+    lpg: 'LPG',
+    electric: '전기',
+};
 
 // 스테이션 라벨 표시
 document.getElementById('kStationLabel').textContent =
@@ -14,6 +23,31 @@ function pickFuel(el) {
     document.querySelectorAll('.fuel-opt').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
     selectedFuel = el.dataset.fuel;
+    userPickedFuel = true;
+}
+
+// 비전 감지된 연료를 UI에 반영. 사용자가 수동 선택 안 했으면 선택까지 동기화.
+function applyDetectedFuel(fuelType) {
+    detectedFuel = fuelType || null;
+
+    const el = document.getElementById('kFuelType');
+    if (el) {
+        if (detectedFuel && FUEL_LABEL[detectedFuel]) {
+            el.textContent = FUEL_LABEL[detectedFuel];
+            el.classList.remove('unrecognized');
+        } else {
+            el.textContent = '미인식';
+            el.classList.add('unrecognized');
+        }
+    }
+
+    // 사용자가 수동 선택하지 않은 상태면 감지 결과를 자동 반영
+    if (!userPickedFuel && detectedFuel && FUEL_LABEL[detectedFuel]) {
+        selectedFuel = detectedFuel;
+        document.querySelectorAll('.fuel-opt').forEach(b => {
+            b.classList.toggle('active', b.dataset.fuel === detectedFuel);
+        });
+    }
 }
 
 function pickMode(el) {
@@ -31,6 +65,12 @@ async function doLogout() {
 
 // ── 주유 시작 ──
 async function doStart() {
+    // 감지도 안 되고 수동 선택도 없으면 차단
+    if (!selectedFuel) {
+        alert('인식 실패. 직접 연료 종류를 선택하세요.');
+        return;
+    }
+
     const rawVal = document.getElementById('kAmtInput').value.replace(/,/g, '');
     const targetValue = parseFloat(rawVal);
     if (isNaN(targetValue) || targetValue <= 0) return;
@@ -151,6 +191,9 @@ async function loadVision() {
                 `RealSense D455 · 30fps · D:${d.depth ? d.depth.toFixed(2) : '--'}m`;
             document.getElementById('kCamBadge').textContent = `${d.label} ${confPct}%`;
         }
+
+        // fuel_type은 label 유무와 독립적으로 매번 갱신
+        applyDetectedFuel(d.fuel_type);
     } catch (e) { /* silent */ }
 }
 

@@ -17,6 +17,10 @@ for_train/
 for_train_v4/
 data.yaml
 
+web/static/temp_kiosk.js
+web/temp_app.py
+vision/backup_post_vision_0417.py
+
 # Python
 __pycache__/
 *.pyc
