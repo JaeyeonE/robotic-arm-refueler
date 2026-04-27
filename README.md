@@ -1,7 +1,6 @@
+# AutoJet Refueling System — Demo Integration
 
-# Demo Integration
-
-Vision, Web, ROS2, Robot을 하나로 연결해 실제 데모 환경에서 동작하는 통합 브랜치입니다.
+Vision, Web, ROS 2, Robot을 하나로 연결해 실제 데모 환경에서 동작하는 통합 프로젝트입니다.
 
 ## Demo Youtube
 
@@ -11,65 +10,52 @@ https://youtube.com/shorts/2rjvqGU6aQo?feature=share
 ### Full process video(youtube)
 https://www.youtube.com/watch?v=3dlU25bXeFo
 
-
-
 ---
 
 ## 시스템 아키텍처
 
 <img width="1080" height="1350" alt="image" src="https://github.com/user-attachments/assets/c847ae01-6292-42b4-a808-ee9f544ef214" />
 
-
-위 구조를 기준으로 시스템은 크게 4개 계층으로 나뉩니다.
-
-### 1. 인식 계층 (Perception)
-- **비전 센서**: Intel RealSense D455
-- **객체 검출**: YOLOv12
-- **좌표 변환**: OpenCV 기반 카메라 좌표계 → 로봇 베이스 좌표계 변환
-
-역할:
-- RGB-D 데이터 획득
-- 주유구 / 주유캡 / 주유건 실시간 인식
-- 로봇 제어에 필요한 좌표 계산
+### 1. 인식 계층 (Vision)
+- **센서**: Intel RealSense D435i
+- **인식 모델**: YOLOv8 (Custom trained for Gas Cap & Handle)
+- **역할**: 주유구 위치 검출, 주유기 핸들 각도 추정 및 로봇 좌표계 변환
 
 ### 2. 제어 계층 (Control)
-- **로봇 제어기**: Doosan Robotics ROS2, Python SDK
+- **로봇 제어기**: Doosan Robotics ROS 2, Python SDK
 - **엔드 이펙터**: XYZ Gripper
-- **작업 시퀀서**: Python Main Logic, FSM, 예외 처리 로직
+- **작업 시퀀서**: ROS 2 Action 기반 (\`FuelTask\` Action Server), 단일 동작 단위로 분리
+- **역할**: 검출된 좌표를 이용한 로봇 이동, 그리퍼 제어, 충격 감지 및 비상 정지 로직
 
-역할:
-- 검출된 좌표를 이용한 로봇 이동
-- 주유건 파지 / 탈거
-- 작업 단계별 시퀀스 제어
-
-### 3. 데이터 계층 (Data)
-- **데이터베이스**: SQLite
-- **로그 관리**: Python Logging Module
-
-역할:
-- 작업 ID, 시간, 성공 여부 저장
-- 비전 좌표값 저장
-- 에러 코드, 동작 상태 기록
+### 3. 통신 및 데이터 계층 (Communication)
+- **미들웨어**: ROS 2 Humble
+- **데이터베이스**: SQLite (WAL 모드 지원)
+- **로깅**: 시스템 전역 로그 및 작업 세션 통계 수집
 
 ### 4. 서비스 계층 (Service)
-- **대시보드**: Streamlit
-- **운영 알림**: Web UI
-
-역할:
-- 작업 통계 및 성공률 확인
-- 실시간 비전 피드 확인
-- 비정상 상황 알림
-- 작업 히스토리 조회
+- **백엔드 / API**: Flask (Python) + SQLite
+- **사용자 UI**: 고객용 키오스크 및 관리자용 모니터링 대시보드 (Vanilla HTML/CSS/JS)
+- **역할**: 작업 통계 확인, 실시간 모니터링, 사용자 명령 전달
 
 ---
 
-## 전체 동작 흐름
+## 작업 시나리오 흐름
+\`\`\`text
+1. Vision 모듈이 주유구 검출 및 좌표 계산
+2. 좌표 정보가 Web / DB에 실시간 저장
+3. 고객이 키오스크에서 주유 시작 명령 전송
+4. Web 서버가 ROS 2 Gateway를 통해 Action Goal 송신
+5. 로봇 제어기가 Doosan Commander를 통해 동작 수행 (Step별 피드백 전송)
+6. 작업 완료 후 결과(로그, 통계, 캡처)가 DB 및 UI에 최종 반영
+\`\`\`
 
-```text
-1. Vision → cap_handle 및 주유 관련 객체 검출
-2. 좌표 계산 및 로봇 좌표계 변환
-3. Web / DB에 상태 저장
-4. 사용자 UI에서 작업 시작
-5. ROS2 Task Manager가 시퀀스 실행
-6. Doosan Commander가 로봇 이동 수행
-7. 작업 결과를 로그/DB/UI에 반영
+---
+
+## 모듈별 상세 정보
+
+- [**vision/**](./vision/README.md) — RealSense + YOLO 비전 인식 모듈
+- [**web/**](./web/README.md) — Flask 백엔드 + 키오스크/관리자 UI + 데이터베이스
+- [**fuel_robot_pkg/**](./fuel_robot_pkg/README.md) — ROS 2 로봇 제어 패키지
+- [**fuel_robot_interfaces/**](./fuel_robot_interfaces/README.md) — 커스텀 메시지 및 액션 정의
+
+---

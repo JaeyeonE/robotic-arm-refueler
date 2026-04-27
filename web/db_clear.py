@@ -4,6 +4,9 @@ from database import get_conn
 
 # FK 의존성 순서: 자식 → 부모
 TABLES = [
+    "impact_events",
+    "robot_actions",
+    "task_sessions",
     "logs",
     "vision_detections",
     "robot_snapshots",

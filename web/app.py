@@ -19,6 +19,10 @@ from database import (
     insert_detection, get_latest_detection, get_detection_history,
     get_latest_handle_angle,
     insert_log, get_logs,
+    create_task_session, finalize_task_session,
+    get_task_session, get_task_sessions,
+    insert_robot_action, update_robot_action_end, get_robot_actions,
+    insert_impact_event, get_impact_events,
 )
 from logger import setup_logger
 
@@ -103,6 +107,7 @@ def _fueling_loop():
                             liters=new_liters, cost=new_cost,
                             current_step=4, status="success",
                             finished_at=datetime.now(timezone.utc).isoformat())
+                finalize_task_session(task["id"])
                 insert_log("OK", f"주유 완료: {new_liters}L / {new_cost:,}원",
                            source="kiosk", station_id=station_id, task_id=task["id"])
             else:
@@ -415,6 +420,7 @@ def api_task_start():
 
     user_id = session["user_id"]
     task_id = create_task(station_id, user_id, fuel_type, input_mode, target_value)
+    create_task_session(task_id)
     insert_log("INFO", f"주유 시작: {fuel_type} / {input_mode} / {target_value}",
                source="kiosk", station_id=station_id, task_id=task_id)
 
@@ -461,6 +467,7 @@ def api_task_estop():
     if task:
         update_task(task["id"], status="estop",
                     finished_at=datetime.now(timezone.utc).isoformat())
+        finalize_task_session(task["id"])
         insert_log("ERROR", f"E-STOP 발동 (task_id={task['id']})",
                    source="control", station_id=station_id, task_id=task["id"])
 
@@ -524,6 +531,8 @@ def api_patch_task(task_id):
     if not fields:
         return jsonify({"error": "업데이트할 필드 없음"}), 400
     update_task(task_id, **fields)
+    if fields.get("status") in ("success", "estop", "failed"):
+        finalize_task_session(task_id)
     return jsonify({"ok": True})
 
 
@@ -562,6 +571,93 @@ def api_get_logs():
         source=request.args.get("source"),
         task_id=request.args.get("task_id", type=int),
         limit=request.args.get("limit", 50, type=int),
+    )
+    return jsonify(rows)
+
+
+# ════════════════════════════════════════
+#  Task Session API (집계 / 분석)
+# ════════════════════════════════════════
+
+@app.route("/api/task/sessions", methods=["GET"])
+def api_get_task_sessions():
+    rows = get_task_sessions(
+        station_id=request.args.get("station_id", type=int),
+        limit=request.args.get("limit", 50, type=int),
+        offset=request.args.get("offset", 0, type=int),
+    )
+    return jsonify(rows)
+
+
+@app.route("/api/task/sessions/<int:task_id>", methods=["GET"])
+def api_get_task_session(task_id):
+    row = get_task_session(task_id)
+    if not row:
+        return jsonify({}), 200
+    return jsonify(row)
+
+
+# ════════════════════════════════════════
+#  Robot Action API (step별 이력)
+# ════════════════════════════════════════
+
+@app.route("/api/robot/action", methods=["POST"])
+def api_post_robot_action():
+    """body['event']='start' → INSERT, action_id 반환.
+    body['event']='end'   → action_id로 UPDATE (duration_ms 자동)."""
+    data = request.get_json(force=True)
+    event = data.get("event")
+
+    if event == "start":
+        aid = insert_robot_action(data)
+        return jsonify({"ok": True, "action_id": aid}), 201
+
+    if event == "end":
+        aid = data.get("action_id")
+        if not aid:
+            return jsonify({"error": "action_id 필수 (event=end)"}), 400
+        update_robot_action_end(
+            action_id=aid,
+            success=bool(data.get("success", True)),
+            ended_at=data.get("ended_at"),
+            error_message=data.get("error_message"),
+            max_torque_during=data.get("max_torque_during"),
+            max_force_during=data.get("max_force_during"),
+        )
+        return jsonify({"ok": True})
+
+    return jsonify({"error": "event=start|end 필수"}), 400
+
+
+@app.route("/api/robot/actions", methods=["GET"])
+def api_get_robot_actions():
+    rows = get_robot_actions(
+        task_id=request.args.get("task_id", type=int),
+        station_id=request.args.get("station_id", type=int),
+        limit=request.args.get("limit", 200, type=int),
+    )
+    return jsonify(rows)
+
+
+# ════════════════════════════════════════
+#  Impact Event API (충격 감지)
+# ════════════════════════════════════════
+
+@app.route("/api/robot/impact", methods=["POST"])
+def api_post_impact():
+    data = request.get_json(force=True)
+    if "station_id" not in data or "source" not in data:
+        return jsonify({"error": "station_id, source 필수"}), 400
+    insert_impact_event(data)
+    return jsonify({"ok": True}), 201
+
+
+@app.route("/api/robot/impacts", methods=["GET"])
+def api_get_impacts():
+    rows = get_impact_events(
+        task_id=request.args.get("task_id", type=int),
+        station_id=request.args.get("station_id", type=int),
+        limit=request.args.get("limit", 100, type=int),
     )
     return jsonify(rows)
 
