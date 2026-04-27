@@ -1,0 +1,16 @@
+# Goal
+string command
+float64[6] target_pose
+float64 handle_angle
+bool use_handle_angle
+
+---
+# Result
+bool success
+string message
+
+---
+# Feedback
+int32 current_step
+int32 total_steps
+string status_desc
